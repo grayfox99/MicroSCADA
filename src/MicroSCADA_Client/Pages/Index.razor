@@ -75,7 +75,7 @@
                 
                 foreach (OPCNodeObject node in OPCUABrowse.opcNodes)
                 {
-                    childitems.Add(new TreeItemData($"Server Browse: {node.NodeName}", Icons.Filled.SignalCellular4Bar, node.NodeValue, node.Id));
+                    childitems.Add(new TreeItemData($"{node.NodeName}", Icons.Filled.SignalCellular4Bar, node.NodeValue, node.Id));
                 }
                 return childitems;
 
