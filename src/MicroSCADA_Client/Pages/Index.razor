@@ -1,0 +1,93 @@
+﻿@page "/"
+
+<PageTitle>Index</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
+<MudText Class="mb-8">Welcome to your new app, powered by MudBlazor!</MudText>
+<MudAlert Severity="Severity.Normal">You can find documentation and examples on our website here: <MudLink Href="https://mudblazor.com" Typo="Typo.body2" Color="Color.Inherit"><b>www.mudblazor.com</b></MudLink></MudAlert>
+<MudPaper Width="300px" Elevation="0">
+    <MudTreeView ServerData="LoadServerData" Items="TreeItems">
+        <ItemTemplate>
+            <MudTreeViewItem Value="@context" Icon="@context.Icon" LoadingIconColor="Color.Info" 
+                             Text="@context.Title" EndText="@context.Number?.ToString()" EndTextTypo="@Typo.caption" />
+        </ItemTemplate>
+    </MudTreeView>
+</MudPaper>
+
+@code{
+    private HashSet<TreeItemData> TreeItems { get; set; } = new HashSet<TreeItemData>();
+
+    public class TreeItemData
+    {
+        public string Title { get; set; }
+
+        public string Icon { get; set; }
+
+        public string? Number { get; set; }
+
+        public string? Id { get; set; }
+
+        public HashSet<TreeItemData> TreeItems { get; set; }
+
+        public TreeItemData(string title, string icon, string? number = null, string? id = null)
+        {
+            Title = title;
+            Icon = icon;
+            Number = number;
+            Id = id;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        TreeItems.Add(new TreeItemData("All Mail", Icons.Filled.Email));
+        TreeItems.Add(new TreeItemData("Trash", Icons.Filled.Delete));
+        TreeItems.Add(new TreeItemData("Categories", Icons.Filled.Label)
+        {
+            TreeItems = new HashSet<TreeItemData>()
+            {
+
+                new TreeItemData("Social", Icons.Filled.Group, "90.00"),
+                new TreeItemData("Updates", Icons.Filled.Info, "2294.00"),
+                new TreeItemData("Forums", Icons.Filled.QuestionAnswer, "3566"),
+
+            }
+        });
+    }
+
+    public async Task<HashSet<TreeItemData>> LoadServerData(TreeItemData parentNode)
+    {
+        await Task.Delay(500);
+        HashSet<TreeItemData>? childitems = new HashSet<TreeItemData>();
+
+        if (!((parentNode.Title == "Categories") ||  (parentNode.Title == "All Mail")))
+        {
+            try
+            {
+                if (!OPCUABrowse.ConnectionEstabilished)
+                {
+                    OPCUABrowse.Initialize();
+                    childitems.Add(new TreeItemData($"Server Browse: {OPCUABrowse.opcNodes?[1].NodeName}", Icons.Filled.SignalCellular4Bar, OPCUABrowse.opcNodes?[1].NodeValue, OPCUABrowse.opcNodes?[1].Id));
+                    return childitems;
+                }
+
+                OPCUABrowse.HandleNodesTreeViewAfterExpand(parentNode.Id);
+                
+                foreach (OPCNodeObject node in OPCUABrowse.opcNodes)
+                {
+                    childitems.Add(new TreeItemData($"Server Browse: {node.NodeName}", Icons.Filled.SignalCellular4Bar, node.NodeValue, node.Id));
+                }
+                return childitems;
+
+            }
+            catch (Exception ex) 
+            { 
+                childitems.Add(new TreeItemData($"Initialization failed: {ex.ToString()}", Icons.Filled.AccessAlarm));
+                return childitems;
+            }
+            
+        }
+        
+        else return parentNode.TreeItems;
+    }
+}
