@@ -1,18 +1,24 @@
 ﻿@page "/"
 
-<PageTitle>Index</PageTitle>
-
-<MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
-<MudText Class="mb-8">Welcome to your new app, powered by MudBlazor!</MudText>
-<MudAlert Severity="Severity.Normal">You can find documentation and examples on our website here: <MudLink Href="https://mudblazor.com" Typo="Typo.body2" Color="Color.Inherit"><b>www.mudblazor.com</b></MudLink></MudAlert>
-<MudPaper Width="300px" Elevation="0">
-    <MudTreeView ServerData="LoadServerData" Items="TreeItems">
-        <ItemTemplate>
-            <MudTreeViewItem Value="@context" Icon="@context.Icon" LoadingIconColor="Color.Info" 
-                             Text="@context.Title" EndText="@context.Number?.ToString()" EndTextTypo="@Typo.caption" />
-        </ItemTemplate>
-    </MudTreeView>
-</MudPaper>
+<MudMainContent>    
+    <PageTitle>Index</PageTitle>
+    <MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
+    <MudText Class="mb-8">Welcome to your new app, powered by MudBlazor!</MudText>
+    <MudAlert Severity="Severity.Normal">You can find documentation and examples on our website here: <MudLink Href="https://mudblazor.com" Typo="Typo.body2" Color="Color.Inherit"><b>www.mudblazor.com</b></MudLink></MudAlert>
+        
+    <MudGrid>
+        <MudItem xs="12">        
+            <MudPaper Class="d-flex align-left py-8">
+                <MudTreeView ServerData="LoadServerData" Items="TreeItems">
+                    <ItemTemplate>
+                        <MudTreeViewItem Value="@context" Icon="@context.Icon" LoadingIconColor="Color.Info" 
+                                            Text="@context.Title" EndText="@context.Number?.ToString()" EndTextTypo="@Typo.caption" />
+                    </ItemTemplate>
+                </MudTreeView>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudMainContent>
 
 @code{
     private HashSet<TreeItemData> TreeItems { get; set; } = new HashSet<TreeItemData>();
