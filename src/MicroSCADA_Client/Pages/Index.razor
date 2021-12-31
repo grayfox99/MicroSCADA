@@ -4,24 +4,40 @@
     <PageTitle>Index</PageTitle>
     <MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
     <MudText Class="mb-8">Welcome to your new app, powered by MudBlazor!</MudText>
-    <MudAlert Severity="Severity.Normal">You can find documentation and examples on our website here: <MudLink Href="https://mudblazor.com" Typo="Typo.body2" Color="Color.Inherit"><b>www.mudblazor.com</b></MudLink></MudAlert>
         
     <MudGrid>
-        <MudItem xs="12">        
+        <MudItem xs="8">        
             <MudPaper Class="d-flex align-left py-8">
-                <MudTreeView ServerData="LoadServerData" Items="TreeItems">
+                <MudTreeView ServerData="LoadServerData" Items="TreeItems" MultiSelection="true" @bind-SelectedValues="SelectedTags">
                     <ItemTemplate>
-                        <MudTreeViewItem Value="@context" Icon="@context.Icon" LoadingIconColor="Color.Info" 
+                        <MudTreeViewItem Value="@context" Icon="@context.Icon" LoadingIconColor="Color.Info"
                                             Text="@context.Title" EndText="@context.Number?.ToString()" EndTextTypo="@Typo.caption" />
                     </ItemTemplate>
                 </MudTreeView>
             </MudPaper>
         </MudItem>
+        <MudItem xs="4">   
+           <MudCard Elevation="25">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Subscription View</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText @bind-Value="OPCUABrowse.SubcribeList" Label="Tag Value" Variant="Variant.Text" Margin="Margin.Normal"></MudText>
+                    <br />
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="TagSubcriptionData">Subcribe</MudButton>
+                </MudCardContent>
+            </MudCard>
+         </MudItem>
+         <MudText Style="width: 100%" Typo="Typo.subtitle1"  Class="mb-n2">Number of selected items: @(SelectedTags?.Count ?? 0)</MudText>
     </MudGrid>
 </MudMainContent>
 
 @code{
     private HashSet<TreeItemData> TreeItems { get; set; } = new HashSet<TreeItemData>();
+
+    private HashSet<TreeItemData> SelectedTags { get; set; }
 
     public class TreeItemData
     {
@@ -33,6 +49,8 @@
 
         public string? Id { get; set; }
 
+        public bool Subscribeable { get; set; } = false;
+
         public HashSet<TreeItemData> TreeItems { get; set; }
 
         public TreeItemData(string title, string icon, string? number = null, string? id = null)
@@ -41,24 +59,23 @@
             Icon = icon;
             Number = number;
             Id = id;
+            Subscribeable = (Number != null);
         }
     }
 
     protected override void OnInitialized()
     {
-        TreeItems.Add(new TreeItemData("All Mail", Icons.Filled.Email));
-        TreeItems.Add(new TreeItemData("Trash", Icons.Filled.Delete));
-        TreeItems.Add(new TreeItemData("Categories", Icons.Filled.Label)
-        {
-            TreeItems = new HashSet<TreeItemData>()
-            {
-
-                new TreeItemData("Social", Icons.Filled.Group, "90.00"),
-                new TreeItemData("Updates", Icons.Filled.Info, "2294.00"),
-                new TreeItemData("Forums", Icons.Filled.QuestionAnswer, "3566"),
-
-            }
-        });
+        TreeItems.Add(new TreeItemData("Test", Icons.Filled.Email));
+        TreeItems.Add(new TreeItemData("Trash", Icons.Filled.PrivateConnectivity));
+        //TreeItems.Add(new TreeItemData("Categories", Icons.Filled.Label)
+        //{
+        //    TreeItems = new HashSet<TreeItemData>()
+        //    {
+        //        new TreeItemData("Social", Icons.Filled.Group, "90.00"),
+        //        new TreeItemData("Updates", Icons.Filled.Info, "2294.00"),
+        //        new TreeItemData("Forums", Icons.Filled.QuestionAnswer, "3566"),
+        //    }
+        //});
     }
 
     public async Task<HashSet<TreeItemData>> LoadServerData(TreeItemData parentNode)
@@ -73,15 +90,22 @@
                 if (!OPCUABrowse.ConnectionEstabilished)
                 {
                     OPCUABrowse.Initialize();
-                    childitems.Add(new TreeItemData($"Server Browse: {OPCUABrowse.opcNodes?[1].NodeName}", Icons.Filled.SignalCellular4Bar, OPCUABrowse.opcNodes?[1].NodeValue, OPCUABrowse.opcNodes?[1].Id));
+                    childitems.Add(new TreeItemData($"Server Browse: {OPCUABrowse.OpcNodes?[1].NodeName}", @Icons.Filled.Computer, OPCUABrowse.OpcNodes?[1].NodeValue, OPCUABrowse.OpcNodes?[1].Id));
                     return childitems;
                 }
 
                 OPCUABrowse.HandleNodesTreeViewAfterExpand(parentNode.Id);
-                
-                foreach (OPCNodeObject node in OPCUABrowse.opcNodes)
+
+                foreach (OPCNodeObject node in OPCUABrowse.OpcNodes)
                 {
-                    childitems.Add(new TreeItemData($"{node.NodeName}", Icons.Filled.SignalCellular4Bar, node.NodeValue, node.Id));
+                    if(node.NodeValue is not null)
+                    {
+                        childitems.Add(new TreeItemData($"{node.NodeName}", Icons.Filled.LocalOffer, node.NodeValue, node.Id));   
+                    }
+                    else
+                    {
+                        childitems.Add(new TreeItemData($"{node.NodeName}", Icons.Filled.Label, node.NodeValue, node.Id));
+                    }                   
                 }
                 return childitems;
 
@@ -90,10 +114,21 @@
             { 
                 childitems.Add(new TreeItemData($"Initialization failed: {ex.ToString()}", Icons.Filled.AccessAlarm));
                 return childitems;
-            }
-            
+            }           
         }
-        
+
         else return parentNode.TreeItems;
+    }
+
+    public void TagSubcriptionData()
+    {
+        List<string> NodeIds = new List<string>();
+
+        foreach(TreeItemData item in SelectedTags)
+        {
+            NodeIds.Add(item.Id);
+        };
+
+        if (!OPCUABrowse.Subcribe(NodeIds)) OPCUABrowse.SubcribeList.Add("Error enocuntered");
     }
 }
