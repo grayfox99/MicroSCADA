@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.31911.260
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MicroSCADA", "MicroSCADA.csproj", "{BEC9CDAD-62A3-4409-B485-A51E9A5C41B6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MicroSCADA_Client", "..\MicroSCADA_Client\MicroSCADA_Client.csproj", "{C5AA242B-C303-40A4-864A-F44638A1472A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MicroSCADA_Client", "..\MicroSCADA_Client\MicroSCADA_Client.csproj", "{C5AA242B-C303-40A4-864A-F44638A1472A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,10 +11,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{BEC9CDAD-62A3-4409-B485-A51E9A5C41B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BEC9CDAD-62A3-4409-B485-A51E9A5C41B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BEC9CDAD-62A3-4409-B485-A51E9A5C41B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BEC9CDAD-62A3-4409-B485-A51E9A5C41B6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C5AA242B-C303-40A4-864A-F44638A1472A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C5AA242B-C303-40A4-864A-F44638A1472A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5AA242B-C303-40A4-864A-F44638A1472A}.Release|Any CPU.ActiveCfg = Release|Any CPU
