@@ -1,41 +1,55 @@
 ﻿using Opc.UaFx;
 using Opc.UaFx.Client;
+using Microsoft.AspNetCore.Components;
+using MicroSCADA_Client.Pages;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace MicroSCADA_Client.Data
 {
-    public static class OPCUABrowse
+    public class OPCUABrowse: INotifyPropertyChanged
     {
-        public static string UAendpointAddress { get; private set; } = "opc.tcp://laptop-jvk86rqt:51210/UA/SampleServer";
+        public  string UAendpointAddress { get; private set; } = "opc.tcp://laptop-jvk86rqt:51210/UA/SampleServer";
 
-        public static List<OPCNodeObject>? OpcNodes { get; private set; } = new List<OPCNodeObject>() { new OPCNodeObject("0", "Initialize", "0") };
+        public  List<OPCNodeObject>? OpcNodes { get; private set; } = new List<OPCNodeObject>() { new OPCNodeObject("0", "Initialize", "0") };
 
-        public static HashSet<string>? SubcribeList { get; private set; } = null;
+        public List<int> TagValues { get; private set; }  =  new List<int> { 0 };
 
-        public static OpcClient? Client { get; private set; }
+        public List<string> SubscribeChanged { get; set; } = new List<string> { "Empty" };
 
-        public static bool ConnectionEstabilished { get; private set; } = false;
+        public OpcClient Client { get; private set; } = new OpcClient();
 
-        public static void HandleNodesTreeViewAfterExpand(string opcnodeid)
+        public bool ConnectionEstabilished { get; private set; } = false;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public void HandleNodesTreeViewAfterExpand(string opcnodeid)
         {
             OpcNodeInfo machineNode = Client.BrowseNode(opcnodeid);
             OpcNodes?.Clear();
 
-            foreach (var childNode in machineNode.Children())
+            try
             {
-                if (!Browse(childNode))
-                    break;
+                foreach (var childNode in machineNode.Children())
+                {
+                    if (!Browse(childNode))
+                        break;
 
-                OpcNodes?.Add
-                    (new OPCNodeObject(childNode.NodeId.ToString(), childNode.Name.ToString(), childNode.Attribute(OpcAttribute.Value)?.Value.ToString()));
+                    OpcNodes?.Add
+                        (new OPCNodeObject(childNode.NodeId.ToString(), childNode.Name.ToString(), childNode.Attribute(OpcAttribute.Value)?.Value.ToString()));
 
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
         }
-
 
         /// <summary>
         /// Initializes the OPC UA connection by creating a certificate and then connecting to the given UAendpointAddress
         /// </summary>
-        public static void Initialize()
+        public void Initialize()
         {
             Client = new OpcClient(UAendpointAddress);
 
@@ -59,7 +73,7 @@ namespace MicroSCADA_Client.Data
             }
         }
 
-        private static bool Browse(OpcNodeInfo node)
+        private bool Browse(OpcNodeInfo node)
         {
             //if (opcNodes is not null) opcNodes.Clear();
 
@@ -68,18 +82,18 @@ namespace MicroSCADA_Client.Data
             try
             {
 
-                if (node is OpcObjectNodeInfo)
-                {
-                    if (node.Reference.TypeDefinitionId == Opc.Ua.ObjectTypeIds.FolderType) { }
-                }
-                else if (node is OpcMethodNodeInfo)
-                {
+                //if (node is OpcObjectNodeInfo)
+                //{
+                //    if (node.Reference.TypeDefinitionId == Opc.Ua.ObjectTypeIds.FolderType) { }
+                //}
+                //else if (node is OpcMethodNodeInfo)
+                //{
 
-                }
-                else if (node is OpcVariableNodeInfo)
-                {
-                    if (node.Reference.ReferenceType == OpcReferenceType.HasProperty) { }
-                }
+                //}
+                //else if (node is OpcVariableNodeInfo)
+                //{
+                //    if (node.Reference.ReferenceType == OpcReferenceType.HasProperty) { }
+                //}
 
                 OpcNodes?.Add
                     (new OPCNodeObject(node.NodeId.ToString(), node.Name.ToString(), node.Attribute(OpcAttribute.Value)?.Value.ToString()));
@@ -99,7 +113,7 @@ namespace MicroSCADA_Client.Data
         /// </summary>
         /// <param name="tagIds"></param>
         /// <returns></returns>
-        public static bool Subcribe(List<string> tagIds)
+        public bool Subcribe(List<string> tagIds)
         {
             // Create an (empty) subscription to which we will addd OpcMonitoredItems.
             OpcSubscription subscription;
@@ -129,7 +143,7 @@ namespace MicroSCADA_Client.Data
 
                 // Set a custom sampling interval on the 
                 // monitored item.
-                item.SamplingInterval = 200;
+                item.SamplingInterval = 500;
 
                 // Add the item to the subscription.
                 subscription.AddMonitoredItem(item);
@@ -141,14 +155,19 @@ namespace MicroSCADA_Client.Data
             return true; 
         }
 
-        private static void HandleDataChanged(object sender, OpcDataChangeReceivedEventArgs e)
+        public void HandleDataChanged(object sender, OpcDataChangeReceivedEventArgs e)
         {
             // The tag property contains the previously set value.
             OpcMonitoredItem item = (OpcMonitoredItem)sender;
 
-            string _tagsubscriptiondata = $"Data Change from Index {item.Tag}: {e.Item.Value}";     
+            SubscribeChanged.Add($"Data Change from Index {item.Tag} to {e.Item.Value}");
 
-            SubcribeList?.Add(_tagsubscriptiondata);
         }
+
+        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "SubcribeChange")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
     }
 }

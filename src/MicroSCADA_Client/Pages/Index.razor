@@ -2,11 +2,11 @@
 
 <MudMainContent>    
     <PageTitle>Index</PageTitle>
-    <MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
-    <MudText Class="mb-8">Welcome to your new app, powered by MudBlazor!</MudText>
+    <MudText Typo="Typo.h3" GutterBottom="true">Welcome to MicroSCADA!</MudText>
+    <MudText Class="mb-8">Expand the Node to Estabilish Connection to the OPC Server</MudText>
         
     <MudGrid>
-        <MudItem xs="8">        
+        <MudItem xs="6">        
             <MudPaper Class="d-flex align-left py-8">
                 <MudTreeView ServerData="LoadServerData" Items="TreeItems" MultiSelection="true" @bind-SelectedValues="SelectedTags">
                     <ItemTemplate>
@@ -16,31 +16,46 @@
                 </MudTreeView>
             </MudPaper>
         </MudItem>
-        <MudItem xs="4">   
-           <MudCard Elevation="25">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Subscription View</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudText @bind-Value="OPCUABrowse.SubcribeList" Label="Tag Value" Variant="Variant.Text" Margin="Margin.Normal"></MudText>
-                    <br />
-                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="TagSubcriptionData">Subcribe</MudButton>
-                </MudCardContent>
-            </MudCard>
+        <MudItem xs="6">            
+            <MudCard Elevation="25">
+                <MudList >
+                    @foreach(string item in OPCBrowseClass.SubscribeChanged)
+                    {
+                        <MudListItem>@item</MudListItem>
+                    }                    
+                </MudList>
+            </MudCard>    
+            <MudButton OnClick="TagSubcriptionData" Variant="Variant.Filled" Color="Color.Primary">
+                @if (_processing)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                    <MudText Class="ms-2">Processing</MudText>
+                }
+                else
+                {
+                    <MudText>Click me</MudText>
+                }
+            </MudButton> 
          </MudItem>
          <MudText Style="width: 100%" Typo="Typo.subtitle1"  Class="mb-n2">Number of selected items: @(SelectedTags?.Count ?? 0)</MudText>
     </MudGrid>
 </MudMainContent>
 
 @code{
-    private HashSet<TreeItemData> TreeItems { get; set; } = new HashSet<TreeItemData>();
 
-    private HashSet<TreeItemData> SelectedTags { get; set; }
+    private HashSet<TreeItemData> TreeItems {  get; set; } = new HashSet<TreeItemData>();
+
+    private HashSet<TreeItemData> SelectedTags { get; set; } = new HashSet<TreeItemData>();
+
+    public OPCUABrowse OPCBrowseClass = new OPCUABrowse();
+
+    public string tagRelay { get; set; } = "Empty";
+
+    private bool _processing = false;
 
     public class TreeItemData
     {
+        
         public string Title { get; set; }
 
         public string Icon { get; set; }
@@ -60,43 +75,36 @@
             Number = number;
             Id = id;
             Subscribeable = (Number != null);
-        }
+        }       
     }
 
     protected override void OnInitialized()
     {
-        TreeItems.Add(new TreeItemData("Test", Icons.Filled.Email));
-        TreeItems.Add(new TreeItemData("Trash", Icons.Filled.PrivateConnectivity));
-        //TreeItems.Add(new TreeItemData("Categories", Icons.Filled.Label)
-        //{
-        //    TreeItems = new HashSet<TreeItemData>()
-        //    {
-        //        new TreeItemData("Social", Icons.Filled.Group, "90.00"),
-        //        new TreeItemData("Updates", Icons.Filled.Info, "2294.00"),
-        //        new TreeItemData("Forums", Icons.Filled.QuestionAnswer, "3566"),
-        //    }
-        //});
+        //TreeItems.Add(new TreeItemData("Test", Icons.Filled.Email));
+        TreeItems.Add(new TreeItemData("OPC UA: Local Server", Icons.Filled.PrivateConnectivity));
+        OPCUABrowse OPCBrowseClass = new OPCUABrowse();
+
     }
 
     public async Task<HashSet<TreeItemData>> LoadServerData(TreeItemData parentNode)
     {
-        await Task.Delay(500);
+        //await Task.Delay(500);
         HashSet<TreeItemData>? childitems = new HashSet<TreeItemData>();
 
         if (!((parentNode.Title == "Categories") ||  (parentNode.Title == "All Mail")))
         {
             try
             {
-                if (!OPCUABrowse.ConnectionEstabilished)
+                if (!OPCBrowseClass.ConnectionEstabilished)
                 {
-                    OPCUABrowse.Initialize();
-                    childitems.Add(new TreeItemData($"Server Browse: {OPCUABrowse.OpcNodes?[1].NodeName}", @Icons.Filled.Computer, OPCUABrowse.OpcNodes?[1].NodeValue, OPCUABrowse.OpcNodes?[1].Id));
+                    OPCBrowseClass.Initialize();
+                    childitems.Add(new TreeItemData($"Server Browse: {OPCBrowseClass.OpcNodes?[1].NodeName}", @Icons.Filled.Computer, OPCBrowseClass.OpcNodes?[1].NodeValue, OPCBrowseClass.OpcNodes?[1].Id));
                     return childitems;
                 }
 
-                OPCUABrowse.HandleNodesTreeViewAfterExpand(parentNode.Id);
+                OPCBrowseClass.HandleNodesTreeViewAfterExpand(parentNode.Id);
 
-                foreach (OPCNodeObject node in OPCUABrowse.OpcNodes)
+                foreach (OPCNodeObject node in OPCBrowseClass.OpcNodes)
                 {
                     if(node.NodeValue is not null)
                     {
@@ -120,8 +128,10 @@
         else return parentNode.TreeItems;
     }
 
-    public void TagSubcriptionData()
+    public async Task TagSubcriptionData()
     {
+        _processing = true;
+        
         List<string> NodeIds = new List<string>();
 
         foreach(TreeItemData item in SelectedTags)
@@ -129,6 +139,20 @@
             NodeIds.Add(item.Id);
         };
 
-        if (!OPCUABrowse.Subcribe(NodeIds)) OPCUABrowse.SubcribeList.Add("Error enocuntered");
+        if (!OPCBrowseClass.Subcribe(NodeIds))
+        {
+            Console.WriteLine("Error Occurred while trying to subscribe to the OPC Server Tag(s)");
+        }
+        else
+        {
+            await Task.Delay(2000);
+        }
+        _processing = false;
     }
+
+    //private void PropertyHasChanged(object sender, PropertyChangedEventArgs args)
+    //{
+    //    tagRelay = OPCBrowseClass.SubscribeChanged;
+    //    //StateHasChanged();
+    //}
 }
