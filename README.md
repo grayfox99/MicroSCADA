@@ -7,7 +7,7 @@ In the engineering industry, OPC (Open Platform Communications) is the primary m
   
   My primary purpose with this application was to build a small tree treversal application that can recursively scan and subcribe to nodes that contain values based on dummy tags. This practice is quite common with applications that need to use/monitor the data being trasnmitted a plant's machinary for a variety of data analysis and/or safety reasons. However, most applications in this space are quite old serving on dated technology that only works on Windows Clients. As such, MicroSCADA was a way for me to incorporate Microsoft's latest Blazoir Asp.Net Blazor Server technology using a third party API (OPC UA Cline API from Traegar) to construct a modern and client looking micro-client.
   
-  I was hoping to have a live chart-view but this proved difficult with the time-constraints I had with this project, so I resorted to just a List View that gives you a view of what subcriptions to multiple tags returns in an indisutrial application.
+  I was hoping to have a live chart-view but this proved difficult with the time-constraints I had with this project, so I resorted to just a List View that gives you a view of what subcriptions to multiple tags returns in an industrial application.
   
 Credits to:
   Microsoft
