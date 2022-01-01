@@ -1,5 +1,5 @@
 # MicroSCADA
-#### Video Demo:  <URL HERE>
+#### Video Demo:  https://youtu.be/wmz7Coc42Pw
 #### Description:
 Supervisory control and data acquisition (SCADA) is a system of software and hardware elements that allows industrial organizations to control and monitor various all relevant operations of a particular machinary/component or a host of machines/components that work together. 
 
