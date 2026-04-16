@@ -1,15 +1,20 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
-<MudThemeProvider />
+<MudThemeProvider Theme="_theme" IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="0">
+    <MudAppBar Elevation="0" Color="Color.Surface">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h6" Class="ml-3">MicroSCADA</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Inherit" Link="https://mudblazor.com/" Target="_blank" />
-        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/grayfox99" Target="_blank" />
+        <MudTooltip Text="@(_isDarkMode ? "Switch to light mode" : "Switch to dark mode")">
+            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Color="Color.Inherit" OnClick="ToggleTheme" />
+        </MudTooltip>
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/grayfox99" Target="_blank" />
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
         <MudDrawerHeader>
@@ -26,9 +31,56 @@
 
 @code {
     bool _drawerOpen = true;
+    bool _isDarkMode = true;
 
-    void DrawerToggle()
+    private readonly MudTheme _theme = new()
     {
-        _drawerOpen = !_drawerOpen;
-    }
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#2E7CF6",
+            Secondary = "#00B8A9",
+            Tertiary = "#B5179E",
+            Info = "#4CC9F0",
+            Success = "#2BC48A",
+            Warning = "#F8961E",
+            Error = "#EF476F",
+            AppbarBackground = "#FFFFFF",
+            AppbarText = "#1A1A2E",
+            DrawerBackground = "#F5F7FB",
+            Background = "#F0F2F7",
+            Surface = "#FFFFFF"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#7C3AED",
+            Secondary = "#14B8A6",
+            Tertiary = "#F472B6",
+            Info = "#38BDF8",
+            Success = "#22D3A4",
+            Warning = "#FBBF24",
+            Error = "#F43F5E",
+            AppbarBackground = "#0F172A",
+            AppbarText = "#F9FAFB",
+            DrawerBackground = "#0F172A",
+            DrawerText = "#E2E8F0",
+            DrawerIcon = "#94A3B8",
+            Background = "#0B1220",
+            Surface = "#1E293B",
+            TextPrimary = "#F1F5F9",
+            TextSecondary = "#94A3B8",
+            ActionDefault = "#CBD5E1",
+            ActionDisabled = "#475569",
+            LinesDefault = "#94A3B8",
+            LinesInputs = "#94A3B8",
+            TableLines = "#475569",
+            TableStriped = "#0F172A"
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "10px"
+        }
+    };
+
+    void DrawerToggle() => _drawerOpen = !_drawerOpen;
+    void ToggleTheme() => _isDarkMode = !_isDarkMode;
 }

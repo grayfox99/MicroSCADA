@@ -1,158 +1,266 @@
-﻿@page "/"
+@page "/"
+@inject IOpcUaService OpcService
+@inject IConfiguration Configuration
+@implements IDisposable
 
-<MudMainContent>    
-    <PageTitle>Index</PageTitle>
-    <MudText Typo="Typo.h3" GutterBottom="true">Welcome to MicroSCADA!</MudText>
-    <MudText Class="mb-8">Expand the Node to Estabilish Connection to the OPC Server</MudText>
-        
+<PageTitle>MicroSCADA</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">MicroSCADA</MudText>
+
+@if (!OpcService.IsConnected)
+{
+    <MudPaper Class="pa-4" Style="max-width: 500px;">
+        <MudText Class="mb-4">Enter OPC UA server endpoint to connect</MudText>
+        <MudTextField @bind-Value="_endpointUrl" Label="OPC UA Endpoint" Variant="Variant.Outlined" />
+        <MudButton OnClick="ConnectAsync" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+            Disabled="_connecting">
+            @if (_connecting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ms-n1" />
+                <MudText Class="ms-2">Connecting...</MudText>
+            }
+            else
+            {
+                <MudText>Connect</MudText>
+            }
+        </MudButton>
+        @if (_errorMessage != null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">@_errorMessage</MudAlert>
+        }
+    </MudPaper>
+}
+else
+{
+    <MudButton OnClick="DisconnectAsync" Variant="Variant.Outlined" Color="Color.Error" Class="mb-4"
+        StartIcon="@Icons.Material.Filled.PowerSettingsNew">
+        Disconnect
+    </MudButton>
+
     <MudGrid>
-        <MudItem xs="6">        
-            <MudPaper Class="d-flex align-left py-8">
-                <MudTreeView ServerData="LoadServerData" Items="TreeItems" MultiSelection="true" @bind-SelectedValues="SelectedTags">
+        <MudItem xs="6">
+            <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
+                <MudText Typo="Typo.h6" Class="mb-2">Node Browser</MudText>
+                <MudTreeView T="string" Items="_treeItems" ServerData="LoadChildNodes"
+                    SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedNodeIds">
                     <ItemTemplate>
-                        <MudTreeViewItem Value="@context" Icon="@context.Icon" LoadingIconColor="Color.Info"
-                                            Text="@context.Title" EndText="@context.Number?.ToString()" EndTextTypo="@Typo.caption" />
+                        <MudTreeViewItem T="string" Value="@context.Value" Icon="@context.Icon"
+                            Text="@context.Text"
+                            EndText="@GetNodeValue(context.Value)"
+                            EndTextTypo="Typo.caption" />
                     </ItemTemplate>
                 </MudTreeView>
             </MudPaper>
         </MudItem>
-        <MudItem xs="6">            
-            <MudCard Elevation="25">
-                <MudList >
-                    @foreach(string item in OPCBrowseClass.SubscribeChanged)
-                    {
-                        <MudListItem>@item</MudListItem>
-                    }                    
-                </MudList>
-            </MudCard>    
-            <MudButton OnClick="TagSubcriptionData" Variant="Variant.Filled" Color="Color.Primary">
-                @if (_processing)
+        <MudItem xs="6">
+            <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
+                <MudText Typo="Typo.h6" Class="mb-2">Subscription Data</MudText>
+                @if (_subscribedTags.Count == 0)
                 {
-                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
-                    <MudText Class="ms-2">Processing</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        @(_subscriptionError ?? "No subscriptions active")
+                    </MudText>
+                }
+                else
+                {
+                    <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="table-layout: fixed; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Tag</th>
+                                <th style="width: 9ch; text-align: right;">Value</th>
+                                <th style="width: 13ch;">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tag in _subscribedTags.Values)
+                            {
+                                <tr>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        <MudTooltip Text="@tag.NodeId" Placement="Placement.Top">
+                                            <span>@tag.DisplayName</span>
+                                        </MudTooltip>
+                                    </td>
+                                    <td style="width: 9ch; text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">
+                                        @FormatValue(tag.Value)
+                                    </td>
+                                    <td style="width: 13ch; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">
+                                        @(tag.Timestamp?.ToString("HH:mm:ss.fff") ?? "—")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+            </MudPaper>
+            <MudButton OnClick="SubscribeAsync" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2"
+                Disabled="@(_subscribing || (_selectedNodeIds?.Count ?? 0) == 0)">
+                @if (_subscribing)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ms-n1" />
+                    <MudText Class="ms-2">Subscribing...</MudText>
                 }
                 else
                 {
                     <MudText>Subscribe</MudText>
                 }
-            </MudButton> 
-         </MudItem>
-         <MudText Style="width: 100%" Typo="Typo.subtitle1"  Class="mb-n2">Number of selected items: @(SelectedTags?.Count ?? 0)</MudText>
+            </MudButton>
+            <MudText Typo="Typo.subtitle1" Class="mt-2">
+                Selected: @(_selectedNodeIds?.Count ?? 0) nodes
+            </MudText>
+        </MudItem>
     </MudGrid>
-</MudMainContent>
+}
 
-@code{
+@code {
+    private string _endpointUrl = "";
+    private bool _connecting;
+    private bool _subscribing;
+    private string? _errorMessage;
+    private List<TreeItemData<string>> _treeItems = new();
+    private IReadOnlyCollection<string>? _selectedNodeIds;
+    private Dictionary<string, SubscribedTag> _subscribedTags = new();
+    private string? _subscriptionError;
+    private Dictionary<string, string?> _nodeValues = new();
+    private Dictionary<string, string> _nodeDisplayNames = new();
 
-    private HashSet<TreeItemData> TreeItems {  get; set; } = new HashSet<TreeItemData>();
-
-    private HashSet<TreeItemData> SelectedTags { get; set; } = new HashSet<TreeItemData>();
-
-    public OPCUABrowse OPCBrowseClass = new OPCUABrowse();
-
-    public string tagRelay { get; set; } = "Empty";
-
-    private bool _processing = false;
-
-    public class TreeItemData
+    private class SubscribedTag
     {
-        
-        public string Title { get; set; }
+        public string NodeId { get; init; } = "";
+        public string DisplayName { get; init; } = "";
+        public string? Value { get; set; }
+        public DateTime? Timestamp { get; set; }
+    }
 
-        public string Icon { get; set; }
+    private string? GetNodeValue(string? nodeId) =>
+        nodeId != null && _nodeValues.TryGetValue(nodeId, out var val) ? val : null;
 
-        public string? Number { get; set; }
-
-        public string? Id { get; set; }
-
-        public bool Subscribeable { get; set; } = false;
-
-        public HashSet<TreeItemData> TreeItems { get; set; }
-
-        public TreeItemData(string title, string icon, string? number = null, string? id = null)
-        {
-            Title = title;
-            Icon = icon;
-            Number = number;
-            Id = id;
-            Subscribeable = (Number != null);
-        }       
+    private static string FormatValue(string? raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return "—";
+        if (double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d))
+            return d.ToString("G3", System.Globalization.CultureInfo.InvariantCulture);
+        return raw;
     }
 
     protected override void OnInitialized()
     {
-        //TreeItems.Add(new TreeItemData("Test", Icons.Filled.Email));
-        TreeItems.Add(new TreeItemData("OPC UA: Local Server", Icons.Filled.PrivateConnectivity));
-        OPCUABrowse OPCBrowseClass = new OPCUABrowse();
-
+        _endpointUrl = Configuration["OpcUa:DefaultEndpoint"] ?? "opc.tcp://localhost:4840";
+        OpcService.DataChanged += OnDataChanged;
     }
 
-    public async Task<HashSet<TreeItemData>> LoadServerData(TreeItemData parentNode)
+    private async Task ConnectAsync()
     {
-        //await Task.Delay(500);
-        HashSet<TreeItemData>? childitems = new HashSet<TreeItemData>();
-
-        if (!((parentNode.Title == "Categories") ||  (parentNode.Title == "All Mail")))
+        _connecting = true;
+        _errorMessage = null;
+        try
         {
-            try
+            await OpcService.ConnectAsync(_endpointUrl);
+            _treeItems = new List<TreeItemData<string>>
             {
-                if (!OPCBrowseClass.ConnectionEstabilished)
+                new TreeItemData<string>
                 {
-                    OPCBrowseClass.Initialize();
-                    childitems.Add(new TreeItemData($"Server Browse: {OPCBrowseClass.OpcNodes?[1].NodeName}", @Icons.Filled.Computer, OPCBrowseClass.OpcNodes?[1].NodeValue, OPCBrowseClass.OpcNodes?[1].Id));
-                    return childitems;
+                    Value = "",
+                    Text = "Objects",
+                    Icon = Icons.Material.Filled.Folder,
+                    Expandable = true
                 }
-
-                OPCBrowseClass.HandleNodesTreeViewAfterExpand(parentNode.Id);
-
-                foreach (OPCNodeObject node in OPCBrowseClass.OpcNodes)
-                {
-                    if(node.NodeValue is not null)
-                    {
-                        childitems.Add(new TreeItemData($"{node.NodeName}", Icons.Filled.LocalOffer, node.NodeValue, node.Id));   
-                    }
-                    else
-                    {
-                        childitems.Add(new TreeItemData($"{node.NodeName}", Icons.Filled.Label, node.NodeValue, node.Id));
-                    }                   
-                }
-                return childitems;
-
-            }
-            catch (Exception ex) 
-            { 
-                childitems.Add(new TreeItemData($"Initialization failed: {ex.ToString()}", Icons.Filled.AccessAlarm));
-                return childitems;
-            }           
+            };
         }
-
-        else return parentNode.TreeItems;
+        catch (Exception ex)
+        {
+            _errorMessage = $"Connection failed: {ex.Message}";
+        }
+        finally
+        {
+            _connecting = false;
+        }
     }
 
-    public async Task TagSubcriptionData()
+    private async Task DisconnectAsync()
     {
-        _processing = true;
-        
-        List<string> NodeIds = new List<string>();
-
-        foreach(TreeItemData item in SelectedTags)
-        {
-            NodeIds.Add(item.Id);
-        };
-
-        if (!OPCBrowseClass.Subcribe(NodeIds))
-        {
-            Console.WriteLine("Error Occurred while trying to subscribe to the OPC Server Tag(s)");
-        }
-        else
-        {
-            await Task.Delay(2000);
-        }
-        _processing = false;
+        await OpcService.DisconnectAsync();
+        _treeItems.Clear();
+        _selectedNodeIds = null;
+        _nodeValues.Clear();
+        _nodeDisplayNames.Clear();
+        _subscribedTags.Clear();
+        _subscriptionError = null;
     }
 
-    //private void PropertyHasChanged(object sender, PropertyChangedEventArgs args)
-    //{
-    //    tagRelay = OPCBrowseClass.SubscribeChanged;
-    //    //StateHasChanged();
-    //}
+    private async Task<IReadOnlyCollection<TreeItemData<string>>> LoadChildNodes(string parentNodeId)
+    {
+        try
+        {
+            var browseNodeId = string.IsNullOrEmpty(parentNodeId) ? null : parentNodeId;
+            var nodes = await OpcService.BrowseAsync(browseNodeId);
+            foreach (var n in nodes)
+            {
+                _nodeValues[n.NodeId] = n.Value;
+                _nodeDisplayNames[n.NodeId] = n.DisplayName;
+            }
+            return nodes.Select(n => new TreeItemData<string>
+            {
+                Value = n.NodeId,
+                Text = n.DisplayName,
+                Icon = n.Value != null
+                    ? Icons.Material.Filled.LocalOffer
+                    : Icons.Material.Filled.Folder,
+                Expandable = n.HasChildren
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            return new List<TreeItemData<string>>
+            {
+                new() { Text = $"Error: {ex.Message}", Icon = Icons.Material.Filled.Error }
+            };
+        }
+    }
+
+    private async Task SubscribeAsync()
+    {
+        if (_selectedNodeIds == null || _selectedNodeIds.Count == 0) return;
+
+        _subscribing = true;
+        _subscriptionError = null;
+        try
+        {
+            _subscribedTags = _selectedNodeIds.ToDictionary(
+                id => id,
+                id => new SubscribedTag
+                {
+                    NodeId = id,
+                    DisplayName = _nodeDisplayNames.TryGetValue(id, out var name) ? name : id,
+                    Value = _nodeValues.TryGetValue(id, out var v) ? v : null
+                });
+            await OpcService.SubscribeAsync(_selectedNodeIds);
+        }
+        catch (Exception ex)
+        {
+            _subscriptionError = $"Subscription error: {ex.Message}";
+            _subscribedTags.Clear();
+        }
+        finally
+        {
+            _subscribing = false;
+        }
+    }
+
+    private void OnDataChanged(string nodeId, string value)
+    {
+        InvokeAsync(() =>
+        {
+            if (_subscribedTags.TryGetValue(nodeId, out var tag))
+            {
+                tag.Value = value;
+                tag.Timestamp = DateTime.Now;
+            }
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        OpcService.DataChanged -= OnDataChanged;
+    }
 }

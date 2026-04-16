@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# JetBrains Rider
+.idea/
+
+# OPC UA PKI certificates (generated at runtime)
+pki/
+
+# Screenshots (ad hoc)
+Screenshot*.png
