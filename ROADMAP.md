@@ -1,57 +1,79 @@
-# MicroSCADA Roadmap
+# Roadmap
 
-Future improvements and feature ideas, roughly prioritized.
+Stuff I want to get to when I have the time. Nothing is committed — this is a scratchpad for ideas, not a promise of delivery.
 
-## Near-Term
+## Recently shipped (v2.0)
 
-### Live Data Visualization
-- Add real-time line charts for subscribed tag values using MudBlazor's `MudChart` or a library like ApexCharts.Blazor
-- Configurable time window (last 30s, 1m, 5m, 15m)
-- Multiple tags on the same chart with color coding
+- .NET 8 + OPC Foundation stack migration
+- Dark mode by default + light/dark toggle
+- Subscription panel rewrite (stable rows, 3 sig figs, locked column widths)
+- Bundled node-opcua simulator under `tools/`
 
-### Connection Management
-- Save/load favorite server endpoints (local storage or config file)
-- Display server status info (server name, build info, current time, state)
-- Support authenticated connections (username/password, certificate-based)
-- Connection timeout and automatic reconnection handling
+## Next up (things I want to hit first)
 
-### Node Browser Enhancements
-- Search/filter nodes by name within the tree
-- Show node metadata on click (data type, access level, description, timestamp)
-- Right-click context menu for node operations (read, write, subscribe)
-- Write support for writable variable nodes
+### Live charts
+- Line chart(s) for subscribed values, probably using MudBlazor's `MudChart` first since it's already in the stack. If it's too limited I'll look at ApexCharts.Blazor.
+- Ring buffer per tag, ~60–300 samples, redraw on each subscription tick
+- Time window picker (30s / 1m / 5m / 15m)
+- Multiple tags on one chart, colored per tag
 
-## Mid-Term
+### Connection diagnostics
+- Status pill in the app bar (connected / reconnecting / disconnected)
+- Keep-alive latency, missed keep-alive count
+- Subscription stats — monitored items, publish interval, last notification timestamp
+- Last error surfaced somewhere I don't have to dig into the console for
+- Hook into `Session.KeepAlive` and `Session.Notification` events for this
 
-### Data Grid View
-- `MudDataGrid` for tabular display of subscribed values with sorting and filtering
-- Export subscription data to CSV
-- Configurable column display (node ID, display name, value, timestamp, status)
+### Writes
+- Sim already exposes a writable `Setpoint` tag, so I can test this end-to-end without adding anything
+- Inline edit on the subscription table, or a right-click menu
 
-### Alarm & Event Monitoring
-- Subscribe to OPC UA alarms and conditions
-- Alarm list with severity indicators, acknowledge/confirm actions
-- Notification badges and optional sound alerts
+### Async migration
+- OPC Foundation marks a bunch of sync methods obsolete (`Session.Create`, `Browse`, `ReadValue`, `Subscription.Create`/`Delete`, `ApplicationConfiguration.Validate`, `CoreClientUtils.SelectEndpoint`). Build is currently 1 warning because of this. Swap to the `*Async` versions.
 
-### Historical Data
-- Read historical data from OPC UA servers that support the Historical Access service set
-- Time-range picker for historical queries
-- Overlay historical trends on live charts
+### Security policy picker
+- Currently hardcoded to `useSecurity: false` (anonymous / None). Real plant servers won't accept that.
+- Dropdown for security policy + message mode, plus username/password auth
 
-## Long-Term
+## Later on
 
-### Multi-Server Support
-- Connect to multiple OPC UA servers simultaneously
-- Tabbed or split-pane interface per server
-- Cross-server tag comparison views
+### Node browser polish
+- Search/filter by name within the tree
+- Show node metadata on click (data type, access level, description)
+- Right-click context menu for read / write / subscribe
 
-### Dashboard Builder
-- Drag-and-drop dashboard with customizable widgets (charts, gauges, indicators, tables)
-- Save/load dashboard layouts per user
-- Full-screen kiosk mode for control room displays
+### Data grid view
+- `MudDataGrid` instead of (or alongside) the current subscription table — sorting, filtering, column config
+- CSV export of whatever's in the grid
 
-### Deployment & Security
-- Docker container support with configurable endpoints via environment variables
-- Role-based access control (viewer, operator, admin)
-- Audit logging for write operations and configuration changes
-- HTTPS certificate configuration guidance for production deployments
+### Saved connections
+- Remember recent endpoints, maybe favorite them
+- Just local storage or a small JSON file next to the app
+
+### Alarms & events
+- Subscribe to OPC UA alarms/conditions
+- List view with severity, acknowledge/confirm
+- Notification badge, optional sound
+
+### Historical data
+- Read history from servers that support Historical Access
+- Time range picker
+- Overlay on the live chart so you can see past + present
+
+## Way out
+
+### Multi-server
+- Connect to more than one server at a time
+- Tabbed or split pane per server
+- Cross-server tag comparison
+
+### Dashboard builder
+- Drag-and-drop widgets (charts, gauges, tables, indicators)
+- Saved layouts
+- Fullscreen / kiosk mode for control room screens
+
+### Deployment & security
+- Dockerfile + env-configured endpoints
+- Role-based access (viewer / operator / admin)
+- Audit log for writes and config changes
+- Proper HTTPS guidance — the dev-cert workaround currently in the README is fine for local but not for deploy
