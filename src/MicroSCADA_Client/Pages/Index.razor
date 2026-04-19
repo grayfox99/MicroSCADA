@@ -114,8 +114,18 @@ else
     <MudGrid Class="mt-2">
         <MudItem xs="12">
             <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
-                <MudText Typo="Typo.h6" Class="mb-2">Live Chart</MudText>
-                @if (_chartedTags.Count == 0)
+                <div class="d-flex align-center justify-space-between mb-2">
+                    <MudText Typo="Typo.h6">Live Chart</MudText>
+                    <MudToggleGroup T="TimeSpan" @bind-Value="_chartWindow" Color="Color.Primary"
+                        Size="Size.Small">
+                        <MudToggleItem Value="@TimeSpan.FromSeconds(30)" Text="30s" />
+                        <MudToggleItem Value="@TimeSpan.FromMinutes(1)" Text="1m" />
+                        <MudToggleItem Value="@TimeSpan.FromMinutes(5)" Text="5m" />
+                        <MudToggleItem Value="@TimeSpan.FromMinutes(15)" Text="15m" />
+                    </MudToggleGroup>
+                </div>
+
+                @if (_subscribedTags.Count == 0)
                 {
                     <MudText Typo="Typo.body2" Class="mud-text-secondary">
                         Subscribe to numeric tags to see the chart.
@@ -123,17 +133,46 @@ else
                 }
                 else
                 {
-                    <ApexCharts.ApexChart TItem="TagSample" Options="_chartOptions" @ref="_chart">
-                        @foreach (var nodeId in _chartedTags)
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        @foreach (var nodeId in _subscribedTags.Keys)
                         {
-                            <ApexCharts.ApexPointSeries TItem="TagSample"
-                                Items="@History.GetWindow(nodeId, _chartWindow)"
-                                Name="@GetDisplayName(nodeId)"
-                                SeriesType="ApexCharts.SeriesType.Line"
-                                XValue="@(s => FormatSampleTime(s))"
-                                YValue="@(s => (decimal)s.Value)" />
+                            var isCharted = _chartedTags.Contains(nodeId);
+                            <MudChip T="string" Size="Size.Small"
+                                Color="@(isCharted ? Color.Primary : Color.Default)"
+                                Variant="@(isCharted ? Variant.Filled : Variant.Outlined)"
+                                OnClick="@(() => ToggleChartedTag(nodeId))">
+                                @GetDisplayName(nodeId)
+                            </MudChip>
                         }
-                    </ApexCharts.ApexChart>
+                    </div>
+                    @if (_capWarning)
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2"
+                            ShowCloseIcon="true" CloseIconClicked="@(() => _capWarning = false)">
+                            Chart is capped at @ChartTagCap tags. Untoggle one to add another.
+                        </MudAlert>
+                    }
+
+                    @if (_chartedTags.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                            Click a tag above to plot it.
+                        </MudText>
+                    }
+                    else
+                    {
+                        <ApexCharts.ApexChart TItem="TagSample" Options="_chartOptions" @ref="_chart">
+                            @foreach (var nodeId in _chartedTags)
+                            {
+                                <ApexCharts.ApexPointSeries TItem="TagSample"
+                                    Items="@History.GetWindow(nodeId, _chartWindow)"
+                                    Name="@GetDisplayName(nodeId)"
+                                    SeriesType="ApexCharts.SeriesType.Line"
+                                    XValue="@(s => FormatSampleTime(s))"
+                                    YValue="@(s => (decimal)s.Value)" />
+                            }
+                        </ApexCharts.ApexChart>
+                    }
                 }
             </MudPaper>
         </MudItem>
@@ -155,6 +194,7 @@ else
     private const int ChartTagCap = 4;
     private TimeSpan _chartWindow = TimeSpan.FromMinutes(1);
     private List<string> _chartedTags = new();
+    private bool _capWarning;
     private ApexCharts.ApexChart<TagSample>? _chart;
     private readonly ApexCharts.ApexChartOptions<TagSample> _chartOptions = new()
     {
@@ -204,6 +244,23 @@ else
     private void OnHistoryUpdated()
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleChartedTag(string nodeId)
+    {
+        if (_chartedTags.Contains(nodeId))
+        {
+            _chartedTags.Remove(nodeId);
+            _capWarning = false;
+        }
+        else if (_chartedTags.Count >= ChartTagCap)
+        {
+            _capWarning = true;
+        }
+        else
+        {
+            _chartedTags.Add(nodeId);
+        }
     }
 
     private async Task ConnectAsync()
