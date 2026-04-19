@@ -9,70 +9,92 @@ public class OpcUaService : IOpcUaService
 {
     private Opc.Ua.Client.ISession? _session;
     private readonly List<Subscription> _subscriptions = new();
+    private readonly SemaphoreSlim _lock = new(1, 1);
 
     public bool IsConnected => _session?.Connected ?? false;
     public event Action<string, string>? DataChanged;
 
     public async Task ConnectAsync(string endpointUrl)
     {
-        if (_session?.Connected == true)
-            await DisconnectAsync();
-
-        var config = new ApplicationConfiguration
+        await _lock.WaitAsync();
+        try
         {
-            ApplicationName = "MicroSCADA",
-            ApplicationUri = Utils.Format(@"urn:{0}:MicroSCADA", System.Net.Dns.GetHostName()),
-            ApplicationType = ApplicationType.Client,
-            SecurityConfiguration = new SecurityConfiguration
+            if (_session?.Connected == true)
+                await DisconnectCoreAsync();
+
+            var config = new ApplicationConfiguration
             {
-                ApplicationCertificate = new CertificateIdentifier
+                ApplicationName = "MicroSCADA",
+                ApplicationUri = Utils.Format(@"urn:{0}:MicroSCADA", System.Net.Dns.GetHostName()),
+                ApplicationType = ApplicationType.Client,
+                SecurityConfiguration = new SecurityConfiguration
                 {
-                    StoreType = CertificateStoreType.Directory,
-                    StorePath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "own"),
-                    SubjectName = "CN=MicroSCADA, O=MicroSCADA"
+                    ApplicationCertificate = new CertificateIdentifier
+                    {
+                        StoreType = CertificateStoreType.Directory,
+                        StorePath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "own"),
+                        SubjectName = "CN=MicroSCADA, O=MicroSCADA"
+                    },
+                    TrustedIssuerCertificates = new CertificateTrustList
+                    {
+                        StoreType = CertificateStoreType.Directory,
+                        StorePath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "issuer")
+                    },
+                    TrustedPeerCertificates = new CertificateTrustList
+                    {
+                        StoreType = CertificateStoreType.Directory,
+                        StorePath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "trusted")
+                    },
+                    RejectedCertificateStore = new CertificateTrustList
+                    {
+                        StoreType = CertificateStoreType.Directory,
+                        StorePath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "rejected")
+                    },
+                    AutoAcceptUntrustedCertificates = true
                 },
-                TrustedIssuerCertificates = new CertificateTrustList
-                {
-                    StoreType = CertificateStoreType.Directory,
-                    StorePath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "issuer")
-                },
-                TrustedPeerCertificates = new CertificateTrustList
-                {
-                    StoreType = CertificateStoreType.Directory,
-                    StorePath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "trusted")
-                },
-                RejectedCertificateStore = new CertificateTrustList
-                {
-                    StoreType = CertificateStoreType.Directory,
-                    StorePath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "rejected")
-                },
-                AutoAcceptUntrustedCertificates = true
-            },
-            TransportConfigurations = new TransportConfigurationCollection(),
-            TransportQuotas = new TransportQuotas { OperationTimeout = 15000 },
-            ClientConfiguration = new ClientConfiguration { DefaultSessionTimeout = 60000 }
-        };
+                TransportConfigurations = new TransportConfigurationCollection(),
+                TransportQuotas = new TransportQuotas { OperationTimeout = 15000 },
+                ClientConfiguration = new ClientConfiguration { DefaultSessionTimeout = 60000 }
+            };
 
-        await config.ValidateAsync(ApplicationType.Client);
+            await config.ValidateAsync(ApplicationType.Client);
 
-        config.CertificateValidator.CertificateValidation += (s, e) => { e.Accept = true; };
+            config.CertificateValidator.CertificateValidation += (s, e) => { e.Accept = true; };
 
-        var endpointConfiguration = EndpointConfiguration.Create(config);
-        var selectedEndpoint = CoreClientUtils.SelectEndpoint(config, endpointUrl, useSecurity: false);
-        var endpoint = new ConfiguredEndpoint(null, selectedEndpoint, endpointConfiguration);
+            var endpointConfiguration = EndpointConfiguration.Create(config);
+            var selectedEndpoint = CoreClientUtils.SelectEndpoint(config, endpointUrl, useSecurity: false);
+            var endpoint = new ConfiguredEndpoint(null, selectedEndpoint, endpointConfiguration);
 
-        _session = await new DefaultSessionFactory(null!).CreateAsync(
-            config,
-            endpoint,
-            false,
-            "MicroSCADA Session",
-            60000,
-            new UserIdentity(new AnonymousIdentityToken()),
-            null
-        );
+            _session = await new DefaultSessionFactory(null!).CreateAsync(
+                config,
+                endpoint,
+                false,
+                "MicroSCADA Session",
+                60000,
+                new UserIdentity(new AnonymousIdentityToken()),
+                null
+            );
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     public async Task DisconnectAsync()
+    {
+        await _lock.WaitAsync();
+        try
+        {
+            await DisconnectCoreAsync();
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    private async Task DisconnectCoreAsync()
     {
         foreach (var sub in _subscriptions)
         {
@@ -90,14 +112,14 @@ public class OpcUaService : IOpcUaService
 
     public async Task<List<OpcNode>> BrowseAsync(string? nodeId = null)
     {
-        if (_session == null)
-            throw new InvalidOperationException("Not connected to OPC UA server.");
+        var session = _session
+            ?? throw new InvalidOperationException("Not connected to OPC UA server.");
 
         var startNodeId = string.IsNullOrEmpty(nodeId)
             ? ObjectIds.ObjectsFolder
             : NodeId.Parse(nodeId);
 
-        var (_, _, references) = await _session.BrowseAsync(
+        var (_, _, references) = await session.BrowseAsync(
             null,
             null,
             startNodeId,
@@ -120,7 +142,7 @@ public class OpcUaService : IOpcUaService
             {
                 try
                 {
-                    var dataValue = await _session.ReadValueAsync((NodeId)reference.NodeId);
+                    var dataValue = await session.ReadValueAsync((NodeId)reference.NodeId);
                     value = dataValue?.ToString();
                 }
                 catch { }
@@ -140,33 +162,41 @@ public class OpcUaService : IOpcUaService
 
     public async Task SubscribeAsync(IEnumerable<string> nodeIds)
     {
-        if (_session == null)
-            throw new InvalidOperationException("Not connected to OPC UA server.");
-
-        var subscription = new Subscription(_session.DefaultSubscription)
+        await _lock.WaitAsync();
+        try
         {
-            DisplayName = "MicroSCADA Subscription",
-            PublishingInterval = 1000,
-            KeepAliveCount = 10,
-            LifetimeCount = 30
-        };
+            if (_session == null)
+                throw new InvalidOperationException("Not connected to OPC UA server.");
 
-        foreach (var nodeId in nodeIds)
-        {
-            var item = new MonitoredItem(subscription.DefaultItem)
+            var subscription = new Subscription(_session.DefaultSubscription)
             {
-                DisplayName = nodeId,
-                StartNodeId = NodeId.Parse(nodeId),
-                AttributeId = Attributes.Value,
-                SamplingInterval = 500
+                DisplayName = "MicroSCADA Subscription",
+                PublishingInterval = 1000,
+                KeepAliveCount = 10,
+                LifetimeCount = 30
             };
-            item.Notification += OnMonitoredItemNotification;
-            subscription.AddItem(item);
-        }
 
-        _session.AddSubscription(subscription);
-        await subscription.CreateAsync();
-        _subscriptions.Add(subscription);
+            foreach (var nodeId in nodeIds)
+            {
+                var item = new MonitoredItem(subscription.DefaultItem)
+                {
+                    DisplayName = nodeId,
+                    StartNodeId = NodeId.Parse(nodeId),
+                    AttributeId = Attributes.Value,
+                    SamplingInterval = 500
+                };
+                item.Notification += OnMonitoredItemNotification;
+                subscription.AddItem(item);
+            }
+
+            _session.AddSubscription(subscription);
+            await subscription.CreateAsync();
+            _subscriptions.Add(subscription);
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     private void OnMonitoredItemNotification(MonitoredItem item, MonitoredItemNotificationEventArgs e)
@@ -183,5 +213,6 @@ public class OpcUaService : IOpcUaService
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync();
+        _lock.Dispose();
     }
 }
