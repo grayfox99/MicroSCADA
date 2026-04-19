@@ -9,8 +9,13 @@ builder.Services.AddRazorComponents()
 builder.Services.AddMudServices();
 builder.Services.AddApexCharts();
 builder.Services.AddSingleton<IOpcUaService, OpcUaService>();
+builder.Services.AddSingleton<ITagHistoryService, TagHistoryService>();
 
 var app = builder.Build();
+
+// Eagerly construct TagHistoryService so it subscribes to IOpcUaService.DataChanged
+// before any user hits Connect — otherwise the first few samples post-connect are lost.
+_ = app.Services.GetRequiredService<ITagHistoryService>();
 
 if (!app.Environment.IsDevelopment())
 {
