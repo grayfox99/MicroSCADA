@@ -1,6 +1,6 @@
 namespace MicroSCADA_Client.Services;
 
-public readonly record struct TagSample(DateTime Ts, double Value);
+public sealed record TagSample(DateTime Ts, double Value);
 
 public interface ITagHistoryService : IDisposable
 {

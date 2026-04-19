@@ -1,5 +1,6 @@
 @page "/"
 @inject IOpcUaService OpcService
+@inject ITagHistoryService History
 @inject IConfiguration Configuration
 @implements IDisposable
 
@@ -109,6 +110,34 @@ else
             </MudText>
         </MudItem>
     </MudGrid>
+
+    <MudGrid Class="mt-2">
+        <MudItem xs="12">
+            <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
+                <MudText Typo="Typo.h6" Class="mb-2">Live Chart</MudText>
+                @if (_chartedTags.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        Subscribe to numeric tags to see the chart.
+                    </MudText>
+                }
+                else
+                {
+                    <ApexCharts.ApexChart TItem="TagSample" Options="_chartOptions" @ref="_chart">
+                        @foreach (var nodeId in _chartedTags)
+                        {
+                            <ApexCharts.ApexPointSeries TItem="TagSample"
+                                Items="@History.GetWindow(nodeId, _chartWindow)"
+                                Name="@GetDisplayName(nodeId)"
+                                SeriesType="ApexCharts.SeriesType.Line"
+                                XValue="@(s => FormatSampleTime(s))"
+                                YValue="@(s => (decimal)s.Value)" />
+                        }
+                    </ApexCharts.ApexChart>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
 
 @code {
@@ -122,6 +151,23 @@ else
     private string? _subscriptionError;
     private Dictionary<string, string?> _nodeValues = new();
     private Dictionary<string, string> _nodeDisplayNames = new();
+
+    private const int ChartTagCap = 4;
+    private TimeSpan _chartWindow = TimeSpan.FromMinutes(1);
+    private List<string> _chartedTags = new();
+    private ApexCharts.ApexChart<TagSample>? _chart;
+    private readonly ApexCharts.ApexChartOptions<TagSample> _chartOptions = new()
+    {
+        Chart = new ApexCharts.Chart
+        {
+            Animations = new ApexCharts.Animations { Enabled = false },
+            Toolbar = new ApexCharts.Toolbar { Show = false },
+            Height = 320
+        },
+        Theme = new ApexCharts.Theme { Mode = ApexCharts.Mode.Dark },
+        Stroke = new ApexCharts.Stroke { Curve = ApexCharts.Curve.Smooth, Width = 2 },
+        Tooltip = new ApexCharts.Tooltip { Enabled = true }
+    };
 
     private class SubscribedTag
     {
@@ -146,6 +192,18 @@ else
     {
         _endpointUrl = Configuration["OpcUa:DefaultEndpoint"] ?? "opc.tcp://localhost:4840";
         OpcService.DataChanged += OnDataChanged;
+        History.HistoryUpdated += OnHistoryUpdated;
+    }
+
+    private string GetDisplayName(string nodeId)
+        => _nodeDisplayNames.TryGetValue(nodeId, out var name) ? name : nodeId;
+
+    private static string FormatSampleTime(TagSample s)
+        => s.Ts.ToLocalTime().ToString("HH:mm:ss");
+
+    private void OnHistoryUpdated()
+    {
+        InvokeAsync(StateHasChanged);
     }
 
     private async Task ConnectAsync()
@@ -178,6 +236,10 @@ else
 
     private async Task DisconnectAsync()
     {
+        foreach (var nodeId in _subscribedTags.Keys)
+            History.Untrack(nodeId);
+        _chartedTags.Clear();
+
         await OpcService.DisconnectAsync();
         _treeItems.Clear();
         _selectedNodeIds = null;
@@ -233,6 +295,9 @@ else
                     DisplayName = _nodeDisplayNames.TryGetValue(id, out var name) ? name : id,
                     Value = _nodeValues.TryGetValue(id, out var v) ? v : null
                 });
+            foreach (var id in _selectedNodeIds)
+                History.Track(id);
+            _chartedTags = _selectedNodeIds.Take(ChartTagCap).ToList();
             await OpcService.SubscribeAsync(_selectedNodeIds);
         }
         catch (Exception ex)
@@ -262,5 +327,6 @@ else
     public void Dispose()
     {
         OpcService.DataChanged -= OnDataChanged;
+        History.HistoryUpdated -= OnHistoryUpdated;
     }
 }
