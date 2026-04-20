@@ -47,6 +47,7 @@ else
                         SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedNodeIds">
                         <ItemTemplate>
                             <MudTreeViewItem T="string" Value="@context.Value" Icon="@context.Icon"
+                                IconColor="@GetIconColor(context.Value)"
                                 Text="@context.Text"
                                 EndText="@GetNodeValue(context.Value)"
                                 EndTextTypo="Typo.caption" />
@@ -186,15 +187,15 @@ else
                 }
                 <table class="diag-table">
                     <tbody>
-                        <tr><td>State</td><td>@d.ConnectionState</td></tr>
+                        <tr><td>State</td><td class="@DiagStateClass(d.ConnectionState)">@d.ConnectionState</td></tr>
                         <tr><td>Endpoint</td><td title="@d.EndpointUrl">@(d.EndpointUrl ?? "—")</td></tr>
                         <tr><td>Security</td><td>@(ShortSecurity(d.SecurityPolicyUri))</td></tr>
-                        <tr><td>Uptime</td><td>@(d.SessionUptime.HasValue ? FormatUptime(d.SessionUptime.Value) : "—")</td></tr>
-                        <tr><td>Monitored items</td><td>@d.MonitoredItemCount</td></tr>
+                        <tr><td>Uptime</td><td class="diag-accent">@(d.SessionUptime.HasValue ? FormatUptime(d.SessionUptime.Value) : "—")</td></tr>
+                        <tr><td>Monitored items</td><td class="@(d.MonitoredItemCount > 0 ? "diag-ok" : null)">@d.MonitoredItemCount</td></tr>
                         <tr><td>Publish interval</td><td>@(d.PublishingIntervalMs.HasValue ? $"{d.PublishingIntervalMs} ms" : "—")</td></tr>
                         <tr><td>Last keep-alive</td><td>@FormatAge(d.LastKeepAliveUtc)</td></tr>
-                        <tr><td>Keep-alive latency</td><td>@(d.KeepAliveLatencyMs.HasValue ? $"{d.KeepAliveLatencyMs:F0} ms" : "—")</td></tr>
-                        <tr><td>Missed keep-alives</td><td>@d.MissedKeepAliveCount</td></tr>
+                        <tr><td>Keep-alive latency</td><td class="@DiagLatencyClass(d.KeepAliveLatencyMs)">@(d.KeepAliveLatencyMs.HasValue ? $"{d.KeepAliveLatencyMs:F0} ms" : "—")</td></tr>
+                        <tr><td>Missed keep-alives</td><td class="@(d.MissedKeepAliveCount > 0 ? "diag-error" : null)">@d.MissedKeepAliveCount</td></tr>
                         <tr><td>Last notification</td><td>@FormatAge(d.LastNotificationUtc)</td></tr>
                         @if (!string.IsNullOrEmpty(d.LastError))
                         {
@@ -213,7 +214,11 @@ else
     .diag-table td { padding: 2px 4px; vertical-align: top; }
     .diag-table td:first-child { color: var(--mud-palette-text-secondary); width: 45%; }
     .diag-table td:last-child { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; max-width: 0; white-space: nowrap; }
+    .diag-ok { color: var(--mud-palette-success); }
+    .diag-warn { color: var(--mud-palette-warning); }
     .diag-error { color: var(--mud-palette-error); }
+    .diag-accent { color: var(--mud-palette-info); }
+    .diag-muted { color: var(--mud-palette-text-secondary); }
 </style>
 
 @code {
@@ -227,6 +232,8 @@ else
     private string? _subscriptionError;
     private Dictionary<string, string?> _nodeValues = new();
     private Dictionary<string, string> _nodeDisplayNames = new();
+    private HashSet<string> _nodeFolders = new();
+    private HashSet<string> _nodeReadable = new();
 
     private const int ChartTagCap = 4;
     private static readonly Color[] TagPalette =
@@ -248,9 +255,11 @@ else
         {
             Animations = new ApexCharts.Animations { Enabled = false },
             Toolbar = new ApexCharts.Toolbar { Show = false },
-            Height = 320
+            Height = 320,
+            Background = "transparent",
+            ForeColor = "var(--mud-palette-text-primary)"
         },
-        Theme = new ApexCharts.Theme { Mode = ApexCharts.Mode.Dark },
+        Grid = new ApexCharts.Grid { BorderColor = "var(--mud-palette-lines-default)" },
         Stroke = new ApexCharts.Stroke { Curve = ApexCharts.Curve.Smooth, Width = 2 },
         Tooltip = new ApexCharts.Tooltip { Enabled = true, X = new ApexCharts.TooltipX { Format = "HH:mm:ss" } },
         Xaxis = new ApexCharts.XAxis
@@ -304,6 +313,13 @@ else
     private string? GetNodeValue(string? nodeId) =>
         nodeId != null && _nodeValues.TryGetValue(nodeId, out var val) ? val : null;
 
+    private Color GetIconColor(string? nodeId)
+    {
+        if (string.IsNullOrEmpty(nodeId)) return Color.Default;
+        if (_nodeFolders.Contains(nodeId)) return Color.Default;
+        return _nodeReadable.Contains(nodeId) ? Color.Success : Color.Error;
+    }
+
     private static string FormatValue(string? raw)
     {
         if (string.IsNullOrEmpty(raw)) return "—";
@@ -339,6 +355,21 @@ else
         if (t.TotalHours >= 1) return $"{(int)t.TotalHours}h {t.Minutes}m";
         if (t.TotalMinutes >= 1) return $"{t.Minutes}m {t.Seconds}s";
         return $"{t.Seconds}s";
+    }
+
+    private static string DiagStateClass(ConnectionState s) => s switch
+    {
+        ConnectionState.Connected => "diag-ok",
+        ConnectionState.Faulted => "diag-warn",
+        _ => "diag-muted"
+    };
+
+    private static string? DiagLatencyClass(double? ms)
+    {
+        if (!ms.HasValue) return null;
+        if (ms.Value < 100) return "diag-ok";
+        if (ms.Value < 500) return "diag-warn";
+        return "diag-error";
     }
 
     private static string FormatAge(DateTime? utc)
@@ -431,6 +462,8 @@ else
         _selectedNodeIds = null;
         _nodeValues.Clear();
         _nodeDisplayNames.Clear();
+        _nodeFolders.Clear();
+        _nodeReadable.Clear();
         _subscribedTags.Clear();
         _subscriptionError = null;
     }
@@ -445,14 +478,16 @@ else
             {
                 _nodeValues[n.NodeId] = n.Value;
                 _nodeDisplayNames[n.NodeId] = n.DisplayName;
+                if (n.HasChildren) _nodeFolders.Add(n.NodeId);
+                else if (n.Value != null) _nodeReadable.Add(n.NodeId);
             }
             return nodes.Select(n => new TreeItemData<string>
             {
                 Value = n.NodeId,
                 Text = n.DisplayName,
-                Icon = n.Value != null
-                    ? Icons.Material.Filled.LocalOffer
-                    : Icons.Material.Filled.Folder,
+                Icon = n.HasChildren
+                    ? Icons.Material.Filled.Folder
+                    : Icons.Material.Filled.LocalOffer,
                 Expandable = n.HasChildren
             }).ToList();
         }
