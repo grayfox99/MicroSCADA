@@ -2,6 +2,15 @@
 
 Stuff I want to get to when I have the time. Nothing is committed — this is a scratchpad for ideas, not a promise of delivery.
 
+## Recently shipped (v2.1)
+
+- Live chart card (Blazor-ApexCharts) with 30s / 1m / 5m / 15m window picker, 4-tag cap, stable-color chips, ring-buffer-backed per-tag history
+- Connection diagnostics card — state, endpoint, security, uptime, monitored-item count, publish interval, keep-alive age/latency, missed keep-alives, last notification, last error
+- Connection status pill in the app bar driven by `IDiagnosticsService`
+- Green/red tree icons for readable vs unreadable leaf nodes
+- OPC service promoted to Singleton with `SemaphoreSlim` guarding mutating paths so history + diagnostics survive tab close/reload
+- App-wide layout cleanup: hamburger/drawer removed (single-page), chart adapts to light/dark theme via MudBlazor CSS variables
+
 ## Recently shipped (v2.0)
 
 - .NET 8 + OPC Foundation stack migration
@@ -10,19 +19,6 @@ Stuff I want to get to when I have the time. Nothing is committed — this is a 
 - Bundled node-opcua simulator under `tools/`
 
 ## Next up (things I want to hit first)
-
-### Live charts
-- Line chart(s) for subscribed values, probably using MudBlazor's `MudChart` first since it's already in the stack. If it's too limited I'll look at ApexCharts.Blazor.
-- Ring buffer per tag, ~60–300 samples, redraw on each subscription tick
-- Time window picker (30s / 1m / 5m / 15m)
-- Multiple tags on one chart, colored per tag
-
-### Connection diagnostics
-- Status pill in the app bar (connected / reconnecting / disconnected)
-- Keep-alive latency, missed keep-alive count
-- Subscription stats — monitored items, publish interval, last notification timestamp
-- Last error surfaced somewhere I don't have to dig into the console for
-- Hook into `Session.KeepAlive` and `Session.Notification` events for this
 
 ### Writes
 - Sim already exposes a writable `Setpoint` tag, so I can test this end-to-end without adding anything
