@@ -33,8 +33,8 @@
 else
 {
     <MudGrid>
-        <MudItem xs="4">
-            <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
+        <MudItem xs="4" Class="d-flex">
+            <MudPaper Outlined="true" Class="pa-4 d-flex flex-column flex-grow-1" Style="border-width: 2px;">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <MudText Typo="Typo.h6">Node Browser</MudText>
                     <MudButton OnClick="DisconnectAsync" Variant="Variant.Outlined" Color="Color.Error"
@@ -42,7 +42,7 @@ else
                         Disconnect
                     </MudButton>
                 </div>
-                <div style="max-height: 75vh; overflow-y: auto;">
+                <div class="tree-compact flex-grow-1" style="overflow-y: auto; min-height: 0;">
                     <MudTreeView T="string" Items="_treeItems" ServerData="LoadChildNodes"
                         SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedNodeIds">
                         <ItemTemplate>
@@ -210,6 +210,10 @@ else
 }
 
 <style>
+    .tree-compact { font-size: 0.875rem; }
+    .tree-compact .mud-treeview-item-content { font-size: 0.875rem; }
+    .tree-compact .mud-icon-root { font-size: 1.125rem; }
+    .tree-compact .mud-icon-root.mud-svg-icon { width: 1.125rem; height: 1.125rem; }
     .diag-table { width: 100%; font-size: 0.85rem; }
     .diag-table td { padding: 2px 4px; vertical-align: top; }
     .diag-table td:first-child { color: var(--mud-palette-text-secondary); width: 45%; }
@@ -255,11 +259,21 @@ else
         {
             Animations = new ApexCharts.Animations { Enabled = false },
             Toolbar = new ApexCharts.Toolbar { Show = false },
-            Height = 320,
+            Height = 420,
             Background = "transparent",
             ForeColor = "var(--mud-palette-text-primary)"
         },
-        Grid = new ApexCharts.Grid { BorderColor = "var(--mud-palette-lines-default)" },
+        Grid = new ApexCharts.Grid
+        {
+            BorderColor = "var(--mud-palette-lines-default)",
+            Padding = new ApexCharts.Padding { Bottom = 12 }
+        },
+        Legend = new ApexCharts.Legend
+        {
+            Position = ApexCharts.LegendPosition.Bottom,
+            OffsetY = 8,
+            ItemMargin = new ApexCharts.LegendItemMargin { Vertical = 6 }
+        },
         Stroke = new ApexCharts.Stroke { Curve = ApexCharts.Curve.Smooth, Width = 2 },
         Tooltip = new ApexCharts.Tooltip { Enabled = true, X = new ApexCharts.TooltipX { Format = "HH:mm:ss" } },
         Xaxis = new ApexCharts.XAxis
