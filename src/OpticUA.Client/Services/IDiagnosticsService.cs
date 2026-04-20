@@ -1,4 +1,4 @@
-namespace MicroSCADA_Client.Services;
+namespace OpticUA.Client.Services;
 
 public enum ConnectionState
 {

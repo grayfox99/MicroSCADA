@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 
-namespace MicroSCADA_Client.Services;
+namespace OpticUA.Client.Services;
 
 public sealed class TagHistoryService : ITagHistoryService
 {

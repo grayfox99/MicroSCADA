@@ -1,4 +1,4 @@
-namespace MicroSCADA_Client.Services;
+namespace OpticUA.Client.Services;
 
 public sealed record TagSample(DateTime Ts, double Value);
 

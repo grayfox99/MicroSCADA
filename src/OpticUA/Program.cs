@@ -10,8 +10,8 @@ Console.WriteLine($"Connecting to: {endpointUrl}");
 
 var config = new ApplicationConfiguration
 {
-    ApplicationName = "MicroSCADA Console",
-    ApplicationUri = Utils.Format(@"urn:{0}:MicroSCADA:Console", System.Net.Dns.GetHostName()),
+    ApplicationName = "OpticUA Console",
+    ApplicationUri = Utils.Format(@"urn:{0}:OpticUA:Console", System.Net.Dns.GetHostName()),
     ApplicationType = ApplicationType.Client,
     SecurityConfiguration = new SecurityConfiguration
     {
@@ -19,7 +19,7 @@ var config = new ApplicationConfiguration
         {
             StoreType = CertificateStoreType.Directory,
             StorePath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "own"),
-            SubjectName = "CN=MicroSCADA Console"
+            SubjectName = "CN=OpticUA Console"
         },
         TrustedIssuerCertificates = new CertificateTrustList
         {
@@ -57,7 +57,7 @@ try
         config,
         endpoint,
         false,
-        "MicroSCADA Console",
+        "OpticUA Console",
         60000,
         new UserIdentity(new AnonymousIdentityToken()),
         null

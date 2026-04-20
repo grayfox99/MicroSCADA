@@ -1,9 +1,9 @@
-using MicroSCADA_Client.Models;
+using OpticUA.Client.Models;
 using Opc.Ua;
 using Opc.Ua.Client;
 using Opc.Ua.Configuration;
 
-namespace MicroSCADA_Client.Services;
+namespace OpticUA.Client.Services;
 
 public class OpcUaService : IOpcUaService
 {
@@ -38,8 +38,8 @@ public class OpcUaService : IOpcUaService
 
             var config = new ApplicationConfiguration
             {
-                ApplicationName = "MicroSCADA",
-                ApplicationUri = Utils.Format(@"urn:{0}:MicroSCADA", System.Net.Dns.GetHostName()),
+                ApplicationName = "OpticUA",
+                ApplicationUri = Utils.Format(@"urn:{0}:OpticUA", System.Net.Dns.GetHostName()),
                 ApplicationType = ApplicationType.Client,
                 SecurityConfiguration = new SecurityConfiguration
                 {
@@ -47,7 +47,7 @@ public class OpcUaService : IOpcUaService
                     {
                         StoreType = CertificateStoreType.Directory,
                         StorePath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "own"),
-                        SubjectName = "CN=MicroSCADA, O=MicroSCADA"
+                        SubjectName = "CN=OpticUA, O=OpticUA"
                     },
                     TrustedIssuerCertificates = new CertificateTrustList
                     {
@@ -83,7 +83,7 @@ public class OpcUaService : IOpcUaService
                 config,
                 endpoint,
                 false,
-                "MicroSCADA Session",
+                "OpticUA Session",
                 60000,
                 new UserIdentity(new AnonymousIdentityToken()),
                 null
@@ -228,7 +228,7 @@ public class OpcUaService : IOpcUaService
 
             var subscription = new Subscription(_session.DefaultSubscription)
             {
-                DisplayName = "MicroSCADA Subscription",
+                DisplayName = "OpticUA Subscription",
                 PublishingInterval = 1000,
                 KeepAliveCount = 10,
                 LifetimeCount = 30

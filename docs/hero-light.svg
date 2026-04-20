@@ -1,0 +1,266 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bgL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="blueGlowL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgL)"/>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.04">
+    <pattern id="gridL" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0F172A" stroke-width="0.5"/>
+    </pattern>
+    <rect width="1200" height="630" fill="url(#gridL)"/>
+  </g>
+
+  <!-- Accent glow top-left -->
+  <ellipse cx="240" cy="80" rx="300" ry="200" fill="url(#blueGlowL)"/>
+
+  <!-- ======================== LEFT SIDE — TITLE BLOCK ======================== -->
+
+  <text x="60" y="195" font-family="'SF Pro Display','Inter','Segoe UI',sans-serif" font-size="56" font-weight="800" fill="#0F172A" letter-spacing="-1">Optic<tspan fill="#3B82F6">UA</tspan></text>
+
+  <text x="62" y="232" font-family="'SF Pro Text','Inter','Segoe UI',sans-serif" font-size="16" fill="#64748B" font-weight="400" letter-spacing="0.3">A modern OPC UA client for Blazor Server</text>
+
+  <!-- Feature chips -->
+  <g transform="translate(62, 262)">
+    <rect x="0" y="0" width="102" height="32" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <g transform="translate(12, 8)" fill="none" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 4.5V13a1.5 1.5 0 001.5 1.5h11A1.5 1.5 0 0015 13V6.5A1.5 1.5 0 0013.5 5H8L6.5 3H2.5A1.5 1.5 0 001 4.5z"/>
+    </g>
+    <text x="34" y="20" font-family="'SF Pro Text','Inter','Segoe UI',sans-serif" font-size="12.5" fill="#334155" font-weight="500">Browse</text>
+
+    <rect x="114" y="0" width="118" height="32" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <g transform="translate(126, 8)" fill="none" stroke="#10B981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 1.5a5 5 0 00-5 5v3l-1.5 2h13L13 9.5v-3a5 5 0 00-5-5z"/>
+      <path d="M6 13.5a2 2 0 004 0"/>
+    </g>
+    <text x="148" y="20" font-family="'SF Pro Text','Inter','Segoe UI',sans-serif" font-size="12.5" fill="#334155" font-weight="500">Subscribe</text>
+
+    <rect x="244" y="0" width="96" height="32" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <g transform="translate(256, 8)" fill="none" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="1 14.5 5 8 9 11 15 2"/>
+    </g>
+    <text x="278" y="20" font-family="'SF Pro Text','Inter','Segoe UI',sans-serif" font-size="12.5" fill="#334155" font-weight="500">Chart</text>
+  </g>
+
+  <line x1="62" y1="320" x2="420" y2="320" stroke="#0F172A" stroke-opacity="0.06" stroke-width="1"/>
+
+  <g transform="translate(62, 345)">
+    <text font-family="'SF Mono','Cascadia Code','Consolas',monospace" font-size="11.5" fill="#94A3B8" font-weight="400" letter-spacing="0.5">
+      <tspan>.NET 8</tspan>
+      <tspan dx="8" fill="#CBD5E1">·</tspan>
+      <tspan dx="8">MudBlazor 9</tspan>
+      <tspan dx="8" fill="#CBD5E1">·</tspan>
+      <tspan dx="8">Blazor-ApexCharts</tspan>
+      <tspan dx="8" fill="#CBD5E1">·</tspan>
+      <tspan dx="8">OPC UA</tspan>
+    </text>
+  </g>
+
+  <!-- ======================== RIGHT SIDE — APP MOCK ======================== -->
+
+  <rect x="512" y="77" width="640" height="490" rx="12" fill="#CBD5E1" opacity="0.4"/>
+  <rect x="510" y="75" width="640" height="490" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- Title bar -->
+  <rect x="510" y="75" width="640" height="36" rx="12" fill="#F1F5F9"/>
+  <rect x="510" y="99" width="640" height="12" fill="#F1F5F9"/>
+  <circle cx="532" cy="93" r="5" fill="#EF4444" opacity="0.8"/>
+  <circle cx="550" cy="93" r="5" fill="#F59E0B" opacity="0.8"/>
+  <circle cx="568" cy="93" r="5" fill="#10B981" opacity="0.8"/>
+  <text x="780" y="97" font-family="'SF Pro Text','Inter','Segoe UI',sans-serif" font-size="11" fill="#94A3B8" text-anchor="middle" font-weight="500">OpticUA — OPC UA Explorer</text>
+
+  <!-- Theme toggle (moon) -->
+  <g transform="translate(1112, 86)" fill="none" stroke="#64748B" stroke-width="1.2" opacity="0.5">
+    <path d="M10.5 1.5a7 7 0 11-9 9 5.5 5.5 0 009-9z"/>
+  </g>
+
+  <!-- ===== Tree panel ===== -->
+  <rect x="520" y="115" width="166" height="340" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+
+  <text x="534" y="138" font-family="'SF Pro Text','Inter','Segoe UI',sans-serif" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.8">ADDRESS SPACE</text>
+  <line x1="534" y1="146" x2="672" y2="146" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- Root: Server -->
+  <g transform="translate(534, 158)">
+    <polygon points="0,3 5,7 0,11" fill="#94A3B8"/>
+    <rect x="10" y="1" width="12" height="9" rx="2" fill="#3B82F6" opacity="0.2"/>
+    <rect x="10" y="0" width="7" height="4" rx="1" fill="#3B82F6" opacity="0.4"/>
+    <text x="28" y="10" font-family="'SF Mono','Consolas',monospace" font-size="11" fill="#1E293B" font-weight="500">Server</text>
+    <circle cx="148" cy="5" r="3.5" fill="#10B981"/>
+  </g>
+
+  <g transform="translate(548, 180)">
+    <polygon points="0,3 5,7 0,11" fill="#94A3B8"/>
+    <rect x="10" y="1" width="12" height="9" rx="2" fill="#3B82F6" opacity="0.2"/>
+    <rect x="10" y="0" width="7" height="4" rx="1" fill="#3B82F6" opacity="0.4"/>
+    <text x="28" y="10" font-family="'SF Mono','Consolas',monospace" font-size="11" fill="#475569">Objects</text>
+    <circle cx="134" cy="5" r="3.5" fill="#10B981"/>
+  </g>
+
+  <g transform="translate(566, 202)">
+    <rect x="0" y="2" width="10" height="7" rx="1.5" fill="none" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="16" y="10" font-family="'SF Mono','Consolas',monospace" font-size="10.5" fill="#475569">Temperature</text>
+    <circle cx="114" cy="5" r="3" fill="#10B981"/>
+  </g>
+
+  <g transform="translate(566, 222)">
+    <rect x="0" y="2" width="10" height="7" rx="1.5" fill="none" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="16" y="10" font-family="'SF Mono','Consolas',monospace" font-size="10.5" fill="#475569">Pressure</text>
+    <circle cx="114" cy="5" r="3" fill="#10B981"/>
+  </g>
+
+  <g transform="translate(566, 242)">
+    <rect x="0" y="2" width="10" height="7" rx="1.5" fill="none" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="16" y="10" font-family="'SF Mono','Consolas',monospace" font-size="10.5" fill="#475569">Flow</text>
+    <circle cx="114" cy="5" r="3" fill="#10B981"/>
+  </g>
+
+  <g transform="translate(566, 262)">
+    <rect x="0" y="2" width="10" height="7" rx="1.5" fill="none" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="16" y="10" font-family="'SF Mono','Consolas',monospace" font-size="10.5" fill="#475569">MotorSpeed</text>
+    <circle cx="114" cy="5" r="3" fill="#F59E0B"/>
+  </g>
+
+  <g transform="translate(566, 282)">
+    <rect x="0" y="2" width="10" height="7" rx="1.5" fill="none" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="16" y="10" font-family="'SF Mono','Consolas',monospace" font-size="10.5" fill="#475569">Voltage</text>
+    <circle cx="114" cy="5" r="3" fill="#EF4444"/>
+  </g>
+
+  <g transform="translate(548, 310)">
+    <polygon points="0,3 5,7 0,11" fill="#94A3B8"/>
+    <rect x="10" y="1" width="12" height="9" rx="2" fill="#3B82F6" opacity="0.2"/>
+    <rect x="10" y="0" width="7" height="4" rx="1" fill="#3B82F6" opacity="0.4"/>
+    <text x="28" y="10" font-family="'SF Mono','Consolas',monospace" font-size="11" fill="#475569">Diagnostics</text>
+    <circle cx="134" cy="5" r="3.5" fill="#10B981"/>
+  </g>
+
+  <g transform="translate(566, 332)">
+    <rect x="0" y="2" width="10" height="7" rx="1.5" fill="none" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="16" y="10" font-family="'SF Mono','Consolas',monospace" font-size="10.5" fill="#94A3B8">ServerStatus</text>
+    <circle cx="114" cy="5" r="3" fill="#10B981"/>
+  </g>
+
+  <!-- ===== Chart card ===== -->
+  <rect x="698" y="115" width="440" height="340" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+
+  <text x="718" y="140" font-family="'SF Pro Text','Inter','Segoe UI',sans-serif" font-size="11" fill="#94A3B8" font-weight="600" letter-spacing="0.8">LIVE SUBSCRIPTIONS</text>
+
+  <!-- Window picker -->
+  <g transform="translate(998, 125)">
+    <rect x="0" y="0" width="28" height="18" rx="4" fill="#0F172A" opacity="0.04"/>
+    <text x="14" y="13" font-family="'SF Mono','Consolas',monospace" font-size="8.5" fill="#94A3B8" text-anchor="middle">30s</text>
+    <rect x="32" y="0" width="24" height="18" rx="4" fill="#3B82F6" opacity="0.12"/>
+    <text x="44" y="13" font-family="'SF Mono','Consolas',monospace" font-size="8.5" fill="#3B82F6" text-anchor="middle">1m</text>
+    <rect x="60" y="0" width="24" height="18" rx="4" fill="#0F172A" opacity="0.04"/>
+    <text x="72" y="13" font-family="'SF Mono','Consolas',monospace" font-size="8.5" fill="#94A3B8" text-anchor="middle">5m</text>
+    <rect x="88" y="0" width="28" height="18" rx="4" fill="#0F172A" opacity="0.04"/>
+    <text x="102" y="13" font-family="'SF Mono','Consolas',monospace" font-size="8.5" fill="#94A3B8" text-anchor="middle">15m</text>
+  </g>
+
+  <!-- Tag badges -->
+  <g transform="translate(718, 150)">
+    <rect x="0" y="0" width="88" height="20" rx="4" fill="#3B82F6" opacity="0.1"/>
+    <circle cx="10" cy="10" r="3" fill="#3B82F6"/>
+    <text x="18" y="14" font-family="'SF Mono','Consolas',monospace" font-size="9.5" fill="#3B82F6">Temperature</text>
+
+    <rect x="96" y="0" width="72" height="20" rx="4" fill="#10B981" opacity="0.1"/>
+    <circle cx="106" cy="10" r="3" fill="#10B981"/>
+    <text x="114" y="14" font-family="'SF Mono','Consolas',monospace" font-size="9.5" fill="#059669">Pressure</text>
+
+    <rect x="176" y="0" width="52" height="20" rx="4" fill="#F59E0B" opacity="0.1"/>
+    <circle cx="186" cy="10" r="3" fill="#F59E0B"/>
+    <text x="194" y="14" font-family="'SF Mono','Consolas',monospace" font-size="9.5" fill="#D97706">Flow</text>
+  </g>
+
+  <!-- Chart grid area -->
+  <rect x="718" y="180" width="400" height="180" rx="4" fill="#F8FAFC"/>
+
+  <!-- Horizontal grid -->
+  <g stroke="#E2E8F0" stroke-width="1">
+    <line x1="718" y1="210" x2="1118" y2="210"/>
+    <line x1="718" y1="240" x2="1118" y2="240"/>
+    <line x1="718" y1="270" x2="1118" y2="270"/>
+    <line x1="718" y1="300" x2="1118" y2="300"/>
+    <line x1="718" y1="330" x2="1118" y2="330"/>
+  </g>
+
+  <!-- Vertical grid -->
+  <g stroke="#E2E8F0" stroke-width="1">
+    <line x1="798" y1="180" x2="798" y2="360"/>
+    <line x1="878" y1="180" x2="878" y2="360"/>
+    <line x1="958" y1="180" x2="958" y2="360"/>
+    <line x1="1038" y1="180" x2="1038" y2="360"/>
+  </g>
+
+  <!-- Y-axis -->
+  <text x="714" y="214" font-family="'SF Mono','Consolas',monospace" font-size="8" fill="#94A3B8" text-anchor="end">100</text>
+  <text x="714" y="244" font-family="'SF Mono','Consolas',monospace" font-size="8" fill="#94A3B8" text-anchor="end">75</text>
+  <text x="714" y="274" font-family="'SF Mono','Consolas',monospace" font-size="8" fill="#94A3B8" text-anchor="end">50</text>
+  <text x="714" y="304" font-family="'SF Mono','Consolas',monospace" font-size="8" fill="#94A3B8" text-anchor="end">25</text>
+  <text x="714" y="334" font-family="'SF Mono','Consolas',monospace" font-size="8" fill="#94A3B8" text-anchor="end">0</text>
+
+  <!-- Blue line (Temperature) -->
+  <path d="M718 260 C738 230, 758 200, 798 210 C838 220, 858 280, 878 270 C898 260, 918 210, 958 220 C998 230, 1018 275, 1038 265 C1058 255, 1078 215, 1118 225" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/>
+  <path d="M718 260 C738 230, 758 200, 798 210 C838 220, 858 280, 878 270 C898 260, 918 210, 958 220 C998 230, 1018 275, 1038 265 C1058 255, 1078 215, 1118 225 L1118 360 L718 360 Z" fill="#3B82F6" opacity="0.06"/>
+
+  <!-- Green line (Pressure) -->
+  <path d="M718 290 C748 270, 768 250, 798 260 C828 270, 848 310, 878 300 C908 290, 928 255, 958 265 C988 275, 1008 305, 1038 295 C1068 285, 1088 260, 1118 270" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+  <path d="M718 290 C748 270, 768 250, 798 260 C828 270, 848 310, 878 300 C908 290, 928 255, 958 265 C988 275, 1008 305, 1038 295 C1068 285, 1088 260, 1118 270 L1118 360 L718 360 Z" fill="#10B981" opacity="0.05"/>
+
+  <!-- Amber line (Flow) -->
+  <path d="M718 310 C748 320, 768 340, 798 330 C828 320, 848 290, 878 300 C908 310, 928 335, 958 325 C988 315, 1008 290, 1038 300 C1068 310, 1088 330, 1118 320" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <path d="M718 310 C748 320, 768 340, 798 330 C828 320, 848 290, 878 300 C908 310, 928 335, 958 325 C988 315, 1008 290, 1038 300 C1068 310, 1088 330, 1118 320 L1118 360 L718 360 Z" fill="#F59E0B" opacity="0.04"/>
+
+  <!-- X-axis -->
+  <text x="718" y="375" font-family="'SF Mono','Consolas',monospace" font-size="8" fill="#94A3B8">00:00</text>
+  <text x="878" y="375" font-family="'SF Mono','Consolas',monospace" font-size="8" fill="#94A3B8">00:30</text>
+  <text x="1038" y="375" font-family="'SF Mono','Consolas',monospace" font-size="8" fill="#94A3B8">01:00</text>
+
+  <!-- Current values -->
+  <g transform="translate(718, 390)">
+    <text font-family="'SF Mono','Consolas',monospace" font-size="9" fill="#94A3B8">
+      <tspan fill="#3B82F6">■</tspan><tspan fill="#64748B"> 72.4 °C</tspan>
+      <tspan dx="14" fill="#10B981">■</tspan><tspan fill="#64748B"> 1.82 bar</tspan>
+      <tspan dx="14" fill="#F59E0B">■</tspan><tspan fill="#64748B"> 14.7 L/min</tspan>
+    </text>
+  </g>
+
+  <!-- ===== Diagnostics strip ===== -->
+  <rect x="520" y="465" width="618" height="36" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+
+  <g transform="translate(534, 473)">
+    <rect x="0" y="0" width="90" height="20" rx="4" fill="#10B981" opacity="0.1"/>
+    <circle cx="10" cy="10" r="3" fill="#10B981"/>
+    <text x="18" y="14" font-family="'SF Mono','Consolas',monospace" font-size="10" fill="#059669">Connected</text>
+  </g>
+
+  <g transform="translate(636, 473)">
+    <rect x="0" y="0" width="96" height="20" rx="4" fill="#3B82F6" opacity="0.1"/>
+    <text x="10" y="14" font-family="'SF Mono','Consolas',monospace" font-size="10" fill="#3B82F6">3 monitored</text>
+  </g>
+
+  <g transform="translate(744, 473)">
+    <rect x="0" y="0" width="110" height="20" rx="4" fill="#0F172A" opacity="0.04"/>
+    <text x="10" y="14" font-family="'SF Mono','Consolas',monospace" font-size="10" fill="#64748B">12ms keep-alive</text>
+  </g>
+
+  <g transform="translate(866, 473)">
+    <rect x="0" y="0" width="82" height="20" rx="4" fill="#0F172A" opacity="0.04"/>
+    <text x="10" y="14" font-family="'SF Mono','Consolas',monospace" font-size="10" fill="#64748B">Publish 1 s</text>
+  </g>
+
+  <!-- Corner accent -->
+  <line x1="0" y1="590" x2="60" y2="590" stroke="#3B82F6" stroke-opacity="0.25" stroke-width="2"/>
+  <line x1="0" y1="590" x2="0" y2="630" stroke="#3B82F6" stroke-opacity="0.25" stroke-width="2"/>
+</svg>

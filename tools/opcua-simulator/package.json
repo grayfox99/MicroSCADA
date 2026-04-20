@@ -1,7 +1,7 @@
 {
-  "name": "microscada-opcua-simulator",
+  "name": "opticua-opcua-simulator",
   "version": "1.0.0",
-  "description": "Standalone OPC UA test server with simulated PLC tags for MicroSCADA development",
+  "description": "Standalone OPC UA test server with simulated PLC tags for OpticUA development",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

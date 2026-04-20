@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "MicroSCADA_Client": {
+    "OpticUA.Client": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

@@ -1,12 +1,16 @@
 <p align="center">
-  <img src="docs/hero.svg" width="100%" alt="MicroSCADA — A modern OPC UA client for Blazor Server">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/hero-light.svg">
+    <img src="docs/hero-light.svg" width="100%" alt="OpticUA — A modern OPC UA client for Blazor Server">
+  </picture>
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" width="100%" alt="MicroSCADA demo — connecting to an OPC UA server, subscribing to tags, and watching the live chart update">
+  <img src="docs/demo.gif" width="100%" alt="OpticUA demo — connecting to an OPC UA server, subscribing to tags, and watching the live chart update">
 </p>
 
-# MicroSCADA
+# OpticUA
 
 Connect to an OPC UA server, browse its node tree, multi-select tags, and subscribe to live value updates — all from a single-page Blazor Server app built on the OPC Foundation UA .NET Standard stack.
 
@@ -32,8 +36,8 @@ Browse the address space with lazy expansion. Leaf tags are colored green when t
 
 ```
 src/
-├── MicroSCADA/              # CLI browser — connect + dump the node tree
-└── MicroSCADA_Client/       # Blazor web client
+├── OpticUA/              # CLI browser — connect + dump the node tree
+└── OpticUA.Client/       # Blazor web client
     ├── Models/OpcNode.cs
     ├── Services/
     │   ├── IOpcUaService + impl      # connect, browse, subscribe, keep-alive hook
@@ -62,12 +66,12 @@ npm install
 node server.js --port 4840
 ```
 
-Exposes a dozen simulated PLC tags (pressure, temperature, flow, motor speed, voltage, current, etc.) at `opc.tcp://localhost:4840/UA/MicroSCADA`.
+Exposes a dozen simulated PLC tags (pressure, temperature, flow, motor speed, voltage, current, etc.) at `opc.tcp://localhost:4840/UA/OpticUA`.
 
 ### Run the web client
 
 ```bash
-cd src/MicroSCADA_Client
+cd src/OpticUA.Client
 dotnet run
 ```
 
@@ -83,7 +87,7 @@ ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS="http://localhost:5199" \
 ### Run the CLI browser
 
 ```bash
-cd src/MicroSCADA
+cd src/OpticUA
 dotnet run -- "opc.tcp://your-server:port/path"
 ```
 

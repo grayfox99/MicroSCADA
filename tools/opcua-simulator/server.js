@@ -1,4 +1,4 @@
-// MicroSCADA OPC UA Simulator
+// OpticUA OPC UA Simulator
 // Standalone test server exposing simulated PLC tags.
 //
 // Usage:
@@ -156,7 +156,7 @@ function clamp(value, min, max) {
     const prefix = `${config.channel}.${config.device}`;
 
     console.log("=".repeat(60));
-    console.log("  MicroSCADA OPC UA Simulator");
+    console.log("  OpticUA OPC UA Simulator");
     console.log("=".repeat(60));
     console.log(`  Port:    ${config.port}`);
     console.log(`  Channel: ${config.channel}`);
@@ -168,7 +168,7 @@ function clamp(value, min, max) {
     const pkiDir = path.join(__dirname, "pki");
     const server = new OPCUAServer({
         port: config.port,
-        resourcePath: "/UA/MicroSCADA",
+        resourcePath: "/UA/OpticUA",
         allowAnonymous: true,
         securityModes: [MessageSecurityMode.None],
         securityPolicies: [SecurityPolicy.None],
@@ -181,7 +181,7 @@ function clamp(value, min, max) {
     await server.initialize();
 
     const addressSpace = server.engine.addressSpace;
-    const ns = addressSpace.registerNamespace("urn:MicroSCADA:Simulator");
+    const ns = addressSpace.registerNamespace("urn:OpticUA:Simulator");
 
     const channelFolder = ns.addObject({
         organizedBy: addressSpace.rootFolder.objects,

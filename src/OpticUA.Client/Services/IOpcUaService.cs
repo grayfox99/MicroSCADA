@@ -1,6 +1,6 @@
-using MicroSCADA_Client.Models;
+using OpticUA.Client.Models;
 
-namespace MicroSCADA_Client.Services;
+namespace OpticUA.Client.Services;
 
 public interface IOpcUaService : IAsyncDisposable
 {

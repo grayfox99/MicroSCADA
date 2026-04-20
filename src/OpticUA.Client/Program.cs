@@ -1,5 +1,5 @@
 using ApexCharts;
-using MicroSCADA_Client.Services;
+using OpticUA.Client.Services;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,7 +28,7 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapRazorComponents<MicroSCADA_Client.App>()
+app.MapRazorComponents<OpticUA.Client.App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();

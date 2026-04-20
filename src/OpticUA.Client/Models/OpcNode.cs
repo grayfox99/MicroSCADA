@@ -1,4 +1,4 @@
-namespace MicroSCADA_Client.Models;
+namespace OpticUA.Client.Models;
 
 public class OpcNode
 {
