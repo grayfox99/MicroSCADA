@@ -120,7 +120,7 @@ else
             <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <MudText Typo="Typo.h6">Live Chart</MudText>
-                    <MudToggleGroup T="TimeSpan" @bind-Value="_chartWindow" Color="Color.Primary"
+                    <MudToggleGroup T="TimeSpan" @bind-Value="_chartWindow" Color="Color.Info"
                         Size="Size.Small">
                         <MudToggleItem Value="@TimeSpan.FromSeconds(30)" Text="30s" />
                         <MudToggleItem Value="@TimeSpan.FromMinutes(1)" Text="1m" />
@@ -210,6 +210,7 @@ else
 }
 
 <style>
+    .apexcharts-legend-marker { margin-right: 8px !important; }
     .tree-compact { font-size: 0.875rem; }
     .tree-compact .mud-treeview-item-content { font-size: 0.875rem; }
     .tree-compact .mud-icon-root { font-size: 1.125rem; }
