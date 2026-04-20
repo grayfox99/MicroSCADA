@@ -40,80 +40,80 @@ else
     </MudButton>
 
     <MudGrid>
-        <MudItem xs="6">
+        <MudItem xs="4">
             <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
                 <MudText Typo="Typo.h6" Class="mb-2">Node Browser</MudText>
-                <MudTreeView T="string" Items="_treeItems" ServerData="LoadChildNodes"
-                    SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedNodeIds">
-                    <ItemTemplate>
-                        <MudTreeViewItem T="string" Value="@context.Value" Icon="@context.Icon"
-                            Text="@context.Text"
-                            EndText="@GetNodeValue(context.Value)"
-                            EndTextTypo="Typo.caption" />
-                    </ItemTemplate>
-                </MudTreeView>
+                <div style="max-height: 75vh; overflow-y: auto;">
+                    <MudTreeView T="string" Items="_treeItems" ServerData="LoadChildNodes"
+                        SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedNodeIds">
+                        <ItemTemplate>
+                            <MudTreeViewItem T="string" Value="@context.Value" Icon="@context.Icon"
+                                Text="@context.Text"
+                                EndText="@GetNodeValue(context.Value)"
+                                EndTextTypo="Typo.caption" />
+                        </ItemTemplate>
+                    </MudTreeView>
+                </div>
             </MudPaper>
         </MudItem>
-        <MudItem xs="6">
-            <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
-                <MudText Typo="Typo.h6" Class="mb-2">Subscription Data</MudText>
-                @if (_subscribedTags.Count == 0)
-                {
-                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                        @(_subscriptionError ?? "No subscriptions active")
-                    </MudText>
-                }
-                else
-                {
-                    <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="table-layout: fixed; width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>Tag</th>
-                                <th style="width: 9ch; text-align: right;">Value</th>
-                                <th style="width: 13ch;">Timestamp</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var tag in _subscribedTags.Values)
-                            {
-                                <tr>
-                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                        <MudTooltip Text="@tag.NodeId" Placement="Placement.Top">
-                                            <span>@tag.DisplayName</span>
-                                        </MudTooltip>
-                                    </td>
-                                    <td style="width: 9ch; text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">
-                                        @FormatValue(tag.Value)
-                                    </td>
-                                    <td style="width: 13ch; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">
-                                        @(tag.Timestamp?.ToString("HH:mm:ss.fff") ?? "—")
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </MudSimpleTable>
-                }
-            </MudPaper>
-            <MudButton OnClick="SubscribeAsync" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2"
-                Disabled="@(_subscribing || (_selectedNodeIds?.Count ?? 0) == 0)">
-                @if (_subscribing)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ms-n1" />
-                    <MudText Class="ms-2">Subscribing...</MudText>
-                }
-                else
-                {
-                    <MudText>Subscribe</MudText>
-                }
-            </MudButton>
-            <MudText Typo="Typo.subtitle1" Class="mt-2">
-                Selected: @(_selectedNodeIds?.Count ?? 0) nodes
-            </MudText>
-        </MudItem>
-    </MudGrid>
-
-    <MudGrid Class="mt-2">
         <MudItem xs="8">
+            <MudStack Spacing="4">
+                <div>
+                    <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
+                        <MudText Typo="Typo.h6" Class="mb-2">Subscription Data</MudText>
+                        @if (_subscribedTags.Count == 0)
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                @(_subscriptionError ?? "No subscriptions active")
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="table-layout: fixed; width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Tag</th>
+                                        <th style="width: 9ch; text-align: right;">Value</th>
+                                        <th style="width: 13ch;">Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var tag in _subscribedTags.Values)
+                                    {
+                                        <tr>
+                                            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                <MudTooltip Text="@tag.NodeId" Placement="Placement.Top">
+                                                    <span>@tag.DisplayName</span>
+                                                </MudTooltip>
+                                            </td>
+                                            <td style="width: 9ch; text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">
+                                                @FormatValue(tag.Value)
+                                            </td>
+                                            <td style="width: 13ch; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">
+                                                @(tag.Timestamp?.ToString("HH:mm:ss.fff") ?? "—")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                    </MudPaper>
+                    <MudButton OnClick="SubscribeAsync" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2"
+                        Disabled="@(_subscribing || (_selectedNodeIds?.Count ?? 0) == 0)">
+                        @if (_subscribing)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ms-n1" />
+                            <MudText Class="ms-2">Subscribing...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Subscribe</MudText>
+                        }
+                    </MudButton>
+                    <MudText Typo="Typo.subtitle1" Class="mt-2">
+                        Selected: @(_selectedNodeIds?.Count ?? 0) nodes
+                    </MudText>
+                </div>
             <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <MudText Typo="Typo.h6">Live Chart</MudText>
@@ -176,8 +176,7 @@ else
                     }
                 }
             </MudPaper>
-        </MudItem>
-        <MudItem xs="4">
+
             <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
                 <MudText Typo="Typo.h6" Class="mb-2">Diagnostics</MudText>
                 @{
@@ -202,6 +201,7 @@ else
                     </tbody>
                 </table>
             </MudPaper>
+            </MudStack>
         </MudItem>
     </MudGrid>
 }
@@ -309,9 +309,22 @@ else
     private static string FormatSampleTime(TagSample s)
         => s.Ts.ToLocalTime().ToString("HH:mm:ss");
 
+    private bool _chartDirty;
+
     private void OnHistoryUpdated()
     {
+        _chartDirty = true;
         InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_chartDirty && _chart != null)
+        {
+            _chartDirty = false;
+            try { await _chart.UpdateSeriesAsync(animate: false); }
+            catch { /* chart may be mid-init or disposing; next tick will retry */ }
+        }
     }
 
     private void ToggleChartedTag(string nodeId)
