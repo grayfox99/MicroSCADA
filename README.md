@@ -2,8 +2,6 @@
 
 A small SCADA-style OPC UA client I built with Blazor Server and the OPC Foundation UA .NET Standard stack. Connect to an OPC UA server, browse its node tree, and subscribe to live tag values.
 
-#### Video Demo: https://youtu.be/wmz7Coc42Pw
-
 ## What it does
 
 - Connect to any OPC UA server by endpoint URL
