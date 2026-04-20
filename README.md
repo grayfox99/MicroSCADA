@@ -2,21 +2,23 @@
   <img src="docs/hero.svg" width="100%" alt="MicroSCADA — A modern OPC UA client for Blazor Server">
 </p>
 
+<p align="center">
+  <img src="docs/demo.gif" width="100%" alt="MicroSCADA demo — connecting to an OPC UA server, subscribing to tags, and watching the live chart update">
+</p>
+
 # MicroSCADA
 
-A small SCADA-style OPC UA client I built with Blazor Server and the OPC Foundation UA .NET Standard stack. Connect to an OPC UA server, browse its node tree, and subscribe to live tag values.
+Connect to an OPC UA server, browse its node tree, multi-select tags, and subscribe to live value updates — all from a single-page Blazor Server app built on the OPC Foundation UA .NET Standard stack.
 
 ## What it does
 
-- Connect to any OPC UA server by endpoint URL
-- Browse the node tree with lazy expansion — leaf tags are colored green when the initial read succeeds, red when it doesn't, so unsubscribable nodes stand out
-- Multi-select tags and subscribe to live value updates
-- One stable row per subscribed tag with live value + timestamp. Values are locked to 3 sig figs so the column doesn't jitter while values update
-- Live chart card with window picker (30s / 1m / 5m / 15m), up to 4 tags plotted at once from a per-tag ring buffer, each chip keyed to a stable color
-- Diagnostics card showing session state, endpoint, security policy, uptime, monitored-item count, publish interval, keep-alive timing and miss count, and the last surfaced error
-- Connection status pill in the app bar that follows session state across pages
-- Dark/light theme toggle in the app bar (dark by default) — chart adapts to the active palette via CSS variables
-- Ships with a standalone node-opcua simulator under `tools/` so you can poke at the app without hunting down an external server
+Browse the address space with lazy expansion. Leaf tags are colored green when the initial read succeeds, red when it doesn't, so unsubscribable nodes stand out immediately. Select the tags you care about and subscribe — each one gets a stable row with a live value and timestamp, locked to 3 sig figs so the column doesn't jitter while values change.
+
+- **Live chart** with window picker (30s / 1m / 5m / 15m), up to 4 tags plotted at once from a per-tag ring buffer, each chip keyed to a stable color
+- **Diagnostics card** showing session state, endpoint, security policy, uptime, monitored-item count, publish interval, keep-alive timing and miss count, and the last surfaced error
+- **Connection status pill** in the app bar that follows session state across pages
+- **Dark/light theme toggle** in the app bar (dark by default) — the chart adapts to the active palette via CSS variables
+- **Bundled simulator** — a standalone node-opcua server under `tools/` so you can poke at the app without hunting down an external server
 
 ## Stack
 
@@ -89,14 +91,13 @@ Connects, browses 4 levels deep, prints everything to stdout.
 
 ## How it's wired
 
-- All three services (`IOpcUaService`, `ITagHistoryService`, `IDiagnosticsService`) are registered as Singletons so the OPC session, tag history, and diagnostic state survive tab close / reload. `OpcUaService` guards its mutating paths with a `SemaphoreSlim`; `BrowseAsync` captures the session reference locally so reads don't need the lock
-- History and diagnostics are eagerly constructed at startup — they attach to `OpcUaService` events before any user hits Connect, so early samples and keep-alive events aren't lost
-- `TagHistoryService` parses values to `double`, drops non-numeric ones silently, and coalesces redraw notifications through a 1 Hz timer so the chart doesn't re-render once per subscription tick
-- `DiagnosticsService` polls the OPC service at 1 Hz, builds an immutable `DiagnosticsSnapshot`, and emits it via an `Updated` event. It never sees raw `Opc.Ua` types so the diagnostics pipeline stays decoupled from the OPC stack
-- `Index.razor` consumes everything via DI. `MudTreeView` lazy-loads children via its `ServerData` hook. The subscription panel renders as a table keyed by NodeId so rows stay put — only the value and timestamp refresh on data change
-- ApexCharts options use MudBlazor CSS variables (`--mud-palette-text-primary`, `--mud-palette-lines-default`) for `foreColor` / grid lines, which lets the chart follow the MudThemeProvider palette without a separate theme-state service
-- Endpoint selection uses `CoreClientUtils.SelectEndpoint(config, url, useSecurity: false)` so we negotiate whatever the server actually offers (most dev servers are anonymous / None). Constructing `EndpointDescription` by hand will throw `[80210000] Endpoint does not support the user identity type provided` on any server that isn't using the default secured profile
-- Data change callbacks from OPC subscriptions get marshaled to the UI thread with `InvokeAsync`
+The app is a single Blazor Server page backed by three singleton services. Singletons mean the OPC session, tag history, and diagnostic state all survive tab close and reload.
+
+**Session management.** `OpcUaService` guards its mutating paths with a `SemaphoreSlim`. `BrowseAsync` captures the session reference locally so reads don't need the lock. Endpoint selection uses `CoreClientUtils.SelectEndpoint(config, url, useSecurity: false)` to negotiate whatever the server actually offers — most dev servers are anonymous / None. Constructing `EndpointDescription` by hand will throw `[80210000] Endpoint does not support the user identity type provided` on any server that isn't using the default secured profile.
+
+**History and diagnostics.** Both services are eagerly constructed at startup and attach to `OpcUaService` events before any user hits Connect, so early samples and keep-alive events aren't lost. `TagHistoryService` parses values to `double`, drops non-numeric ones silently, and coalesces redraw notifications through a 1 Hz timer so the chart doesn't re-render once per subscription tick. `DiagnosticsService` polls the OPC service at 1 Hz and builds an immutable `DiagnosticsSnapshot` — it never sees raw `Opc.Ua` types, keeping the diagnostics pipeline decoupled from the OPC stack.
+
+**UI layer.** `Index.razor` consumes everything via DI. `MudTreeView` lazy-loads children through its `ServerData` hook. The subscription panel renders as a table keyed by NodeId so rows stay put — only the value and timestamp refresh on data change. ApexCharts options use MudBlazor CSS variables (`--mud-palette-text-primary`, `--mud-palette-lines-default`) for `foreColor` and grid lines, which lets the chart follow the MudThemeProvider palette without a separate theme-state service. Data change callbacks from OPC subscriptions get marshaled to the UI thread with `InvokeAsync`.
 
 ## Credits
 
@@ -104,3 +105,4 @@ Connects, browses 4 levels deep, prints everything to stdout.
 - [MudBlazor](https://mudblazor.com/)
 - [Blazor-ApexCharts](https://github.com/apexcharts/Blazor-ApexCharts)
 - [node-opcua](https://github.com/node-opcua/node-opcua) — the bundled simulator is built on their server library
+
