@@ -1,5 +1,5 @@
 {
-  "name": "opticua-opcua-simulator",
+  "name": "opticua-simulator",
   "version": "1.0.0",
   "description": "Standalone OPC UA test server with simulated PLC tags for OpticUA development",
   "main": "server.js",
