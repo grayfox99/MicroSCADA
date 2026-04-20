@@ -34,9 +34,9 @@ else
 {
     <MudGrid>
         <MudItem xs="4" Class="d-flex">
-            <MudPaper Outlined="true" Class="pa-4 d-flex flex-column flex-grow-1" Style="border-width: 2px;">
-                <div class="d-flex align-center justify-space-between mb-2">
-                    <MudText Typo="Typo.h6">Node Browser</MudText>
+            <MudPaper Outlined="true" Class="scada-card pa-4 d-flex flex-column flex-grow-1">
+                <div class="d-flex align-center justify-space-between mb-3">
+                    <div class="scada-eyebrow">ADDRESS SPACE</div>
                     <MudButton OnClick="DisconnectAsync" Variant="Variant.Outlined" Color="Color.Error"
                         Size="Size.Small" StartIcon="@Icons.Material.Filled.PowerSettingsNew">
                         Disconnect
@@ -58,9 +58,9 @@ else
         </MudItem>
         <MudItem xs="8">
             <MudStack Spacing="4">
-                <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
-                    <div class="d-flex align-center justify-space-between mb-2">
-                        <MudText Typo="Typo.h6">Subscription Data</MudText>
+                <MudPaper Outlined="true" Class="scada-card pa-4">
+                    <div class="d-flex align-center justify-space-between mb-3">
+                        <div class="scada-eyebrow">SUBSCRIPTION DATA</div>
                         <div class="d-flex align-center gap-3">
                             <MudText Typo="Typo.caption" Class="mud-text-secondary">
                                 Selected: @(_selectedNodeIds?.Count ?? 0)
@@ -117,9 +117,9 @@ else
                             </MudSimpleTable>
                         }
                 </MudPaper>
-            <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
-                <div class="d-flex align-center justify-space-between mb-2">
-                    <MudText Typo="Typo.h6">Live Chart</MudText>
+            <MudPaper Outlined="true" Class="scada-card pa-4">
+                <div class="d-flex align-center justify-space-between mb-3">
+                    <div class="scada-eyebrow">LIVE CHART</div>
                     <MudToggleGroup T="TimeSpan" @bind-Value="_chartWindow" Color="Color.Info"
                         Size="Size.Small">
                         <MudToggleItem Value="@TimeSpan.FromSeconds(30)" Text="30s" />
@@ -137,16 +137,22 @@ else
                 }
                 else
                 {
-                    <div class="d-flex flex-wrap gap-1 mb-2">
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        @{
+                            var tagIdx = 0;
+                        }
                         @foreach (var nodeId in _subscribedTags.Keys)
                         {
+                            var thisIdx = tagIdx % TagPaletteHex.Length;
                             var isCharted = _chartedTags.Contains(nodeId);
-                            <MudChip T="string" Size="Size.Small"
-                                Color="@(isCharted ? GetTagColor(nodeId) : Color.Default)"
-                                Variant="Variant.Outlined"
-                                OnClick="@(() => ToggleChartedTag(nodeId))">
+                            var nodeIdCapture = nodeId;
+                            <button type="button"
+                                    class="scada-tag-pill tag-@thisIdx @(isCharted ? "active" : "")"
+                                    @onclick="@(() => ToggleChartedTag(nodeIdCapture))">
+                                <span class="scada-tag-dot"></span>
                                 @GetDisplayName(nodeId)
-                            </MudChip>
+                            </button>
+                            tagIdx++;
                         }
                     </div>
                     @if (_capWarning)
@@ -180,11 +186,30 @@ else
                 }
             </MudPaper>
 
-            <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
-                <MudText Typo="Typo.h6" Class="mb-2">Diagnostics</MudText>
+            <MudPaper Outlined="true" Class="scada-card pa-4">
+                <div class="scada-eyebrow mb-3">DIAGNOSTICS</div>
                 @{
                     var d = _diag;
                 }
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="scada-pill @PillClassForState(d.ConnectionState)">
+                        <span class="scada-pill-dot"></span>@d.ConnectionState
+                    </span>
+                    <span class="scada-pill @(d.MonitoredItemCount > 0 ? "pill-info" : "")">
+                        @d.MonitoredItemCount item@(d.MonitoredItemCount == 1 ? "" : "s")
+                    </span>
+                    <span class="scada-pill @PillClassForLatency(d.KeepAliveLatencyMs)">
+                        @(d.KeepAliveLatencyMs.HasValue ? $"{d.KeepAliveLatencyMs:F0}ms keep-alive" : "— keep-alive")
+                    </span>
+                    @if (d.PublishingIntervalMs.HasValue)
+                    {
+                        <span class="scada-pill">Publish @(d.PublishingIntervalMs)ms</span>
+                    }
+                    @if (d.MissedKeepAliveCount > 0)
+                    {
+                        <span class="scada-pill pill-error">@d.MissedKeepAliveCount missed</span>
+                    }
+                </div>
                 <table class="diag-table">
                     <tbody>
                         <tr><td>State</td><td class="@DiagStateClass(d.ConnectionState)">@d.ConnectionState</td></tr>
@@ -210,15 +235,108 @@ else
 }
 
 <style>
+    /* Card refinements — 1px subtle border instead of heavy 2px */
+    .scada-card.mud-paper-outlined {
+        border-width: 1px;
+        border-color: rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+    }
+    .mud-theme-light .scada-card.mud-paper-outlined {
+        border-color: rgba(15, 23, 42, 0.09);
+    }
+
+    /* Section eyebrow headers — uppercase, letter-spaced, muted */
+    .scada-eyebrow {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--mud-palette-text-secondary);
+        opacity: 0.72;
+    }
+
+    /* Status / diagnostic pills */
+    .scada-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 22px;
+        padding: 0 10px;
+        border-radius: 6px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.72rem;
+        font-weight: 500;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--mud-palette-text-secondary);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+    .mud-theme-light .scada-pill { background: rgba(15, 23, 42, 0.05); }
+    .scada-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .scada-pill.pill-success { background: rgba(34, 211, 164, 0.14); color: var(--mud-palette-success); }
+    .scada-pill.pill-info    { background: rgba(56, 189, 248, 0.14); color: var(--mud-palette-info); }
+    .scada-pill.pill-warning { background: rgba(251, 191, 36, 0.14); color: var(--mud-palette-warning); }
+    .scada-pill.pill-error   { background: rgba(244, 63, 94, 0.14); color: var(--mud-palette-error); }
+
+    /* Chart tag pills — selectable, tinted when active */
+    .scada-tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 26px;
+        padding: 0 10px;
+        border-radius: 6px;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--mud-palette-text-secondary);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .mud-theme-light .scada-tag-pill { border-color: rgba(15, 23, 42, 0.12); }
+    .scada-tag-pill:hover { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.2); }
+    .mud-theme-light .scada-tag-pill:hover { background: rgba(15, 23, 42, 0.04); }
+    .scada-tag-pill .scada-tag-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: rgba(148, 163, 184, 0.6);
+    }
+    .scada-tag-pill.tag-0 { --tag-c: #38BDF8; --tag-rgb: 56, 189, 248; }
+    .scada-tag-pill.tag-1 { --tag-c: #22D3A4; --tag-rgb: 34, 211, 164; }
+    .scada-tag-pill.tag-2 { --tag-c: #FBBF24; --tag-rgb: 251, 191, 36; }
+    .scada-tag-pill.tag-3 { --tag-c: #F472B6; --tag-rgb: 244, 114, 182; }
+    .scada-tag-pill.tag-4 { --tag-c: #14B8A6; --tag-rgb: 20, 184, 166; }
+    .scada-tag-pill.active {
+        background: rgba(var(--tag-rgb), 0.15);
+        border-color: rgba(var(--tag-rgb), 0.35);
+        color: var(--tag-c);
+    }
+    .scada-tag-pill.active .scada-tag-dot { background: var(--tag-c); }
+
+    /* Chart + tree + diag-table existing styles */
     .apexcharts-legend-marker { margin-right: 8px !important; }
     .tree-compact { font-size: 0.875rem; }
     .tree-compact .mud-treeview-item-content { font-size: 0.875rem; }
     .tree-compact .mud-icon-root { font-size: 1.125rem; }
     .tree-compact .mud-icon-root.mud-svg-icon { width: 1.125rem; height: 1.125rem; }
-    .diag-table { width: 100%; font-size: 0.85rem; }
-    .diag-table td { padding: 2px 4px; vertical-align: top; }
-    .diag-table td:first-child { color: var(--mud-palette-text-secondary); width: 45%; }
-    .diag-table td:last-child { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; max-width: 0; white-space: nowrap; }
+    .diag-table { width: 100%; font-size: 0.82rem; }
+    .diag-table td { padding: 3px 4px; vertical-align: top; }
+    .diag-table td:first-child {
+        color: var(--mud-palette-text-secondary);
+        width: 45%;
+        font-size: 0.72rem;
+        letter-spacing: 0.02em;
+    }
+    .diag-table td:last-child {
+        font-variant-numeric: tabular-nums;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 0;
+        white-space: nowrap;
+    }
     .diag-ok { color: var(--mud-palette-success); }
     .diag-warn { color: var(--mud-palette-warning); }
     .diag-error { color: var(--mud-palette-error); }
@@ -385,6 +503,21 @@ else
         if (ms.Value < 100) return "diag-ok";
         if (ms.Value < 500) return "diag-warn";
         return "diag-error";
+    }
+
+    private static string PillClassForState(ConnectionState s) => s switch
+    {
+        ConnectionState.Connected => "pill-success",
+        ConnectionState.Faulted => "pill-warning",
+        _ => ""
+    };
+
+    private static string PillClassForLatency(double? ms)
+    {
+        if (!ms.HasValue) return "";
+        if (ms.Value < 100) return "pill-success";
+        if (ms.Value < 500) return "pill-warning";
+        return "pill-error";
     }
 
     private static string FormatAge(DateTime? utc)
