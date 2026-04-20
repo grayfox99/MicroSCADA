@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/hero.svg" width="100%" alt="MicroSCADA — A modern OPC UA client for Blazor Server">
+</p>
+
 # MicroSCADA
 
 A small SCADA-style OPC UA client I built with Blazor Server and the OPC Foundation UA .NET Standard stack. Connect to an OPC UA server, browse its node tree, and subscribe to live tag values.
