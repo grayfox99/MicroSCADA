@@ -32,10 +32,10 @@
 }
 else
 {
-    <MudGrid>
+    <MudGrid Spacing="0" Class="scada-outer-grid">
         <MudItem xs="4" Class="d-flex">
             <MudPaper Outlined="true" Class="scada-card pa-4 d-flex flex-column flex-grow-1">
-                <div class="d-flex align-center justify-space-between mb-3">
+                <div class="scada-eyebrow-row">
                     <div class="scada-eyebrow">ADDRESS SPACE</div>
                     <MudButton OnClick="DisconnectAsync" Variant="Variant.Outlined" Color="Color.Error"
                         Size="Size.Small" StartIcon="@Icons.Material.Filled.PowerSettingsNew">
@@ -48,9 +48,7 @@ else
                         <ItemTemplate>
                             <MudTreeViewItem T="string" Value="@context.Value" Icon="@context.Icon"
                                 IconColor="@GetIconColor(context.Value)"
-                                Text="@context.Text"
-                                EndText="@GetNodeValue(context.Value)"
-                                EndTextTypo="Typo.caption" />
+                                Text="@context.Text" />
                         </ItemTemplate>
                     </MudTreeView>
                 </div>
@@ -58,15 +56,16 @@ else
         </MudItem>
         <MudItem xs="8">
             <MudStack Spacing="4">
-                <MudPaper Outlined="true" Class="scada-card pa-4">
-                    <div class="d-flex align-center justify-space-between mb-3">
+                <div class="scada-row-2col">
+                <MudPaper Outlined="true" Class="scada-card pa-4" Style="flex: 1 1 50%; min-width: 0;">
+                    <div class="scada-eyebrow-row">
                         <div class="scada-eyebrow">SUBSCRIPTION DATA</div>
                         <div class="d-flex align-center gap-3">
                             <MudText Typo="Typo.caption" Class="mud-text-secondary">
                                 Selected: @(_selectedNodeIds?.Count ?? 0)
                             </MudText>
-                            <MudButton OnClick="SubscribeAsync" Variant="Variant.Filled" Color="Color.Primary"
-                                Size="Size.Small"
+                            <MudButton OnClick="SubscribeAsync" Variant="Variant.Text" Color="Color.Info"
+                                Size="Size.Small" Class="scada-action-btn"
                                 Disabled="@(_subscribing || (_selectedNodeIds?.Count ?? 0) == 0)">
                                 @if (_subscribing)
                                 {
@@ -88,7 +87,7 @@ else
                     }
                     else
                     {
-                        <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="table-layout: fixed; width: 100%;">
+                        <MudSimpleTable Dense="true" Hover="true" Style="table-layout: fixed; width: 100%;">
                                 <thead>
                                     <tr>
                                         <th>Tag</th>
@@ -100,28 +99,70 @@ else
                                     @foreach (var tag in _subscribedTags.Values)
                                     {
                                         <tr>
-                                            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <td class="sub-tag">
                                                 <MudTooltip Text="@tag.NodeId" Placement="Placement.Top">
                                                     <span>@tag.DisplayName</span>
                                                 </MudTooltip>
                                             </td>
-                                            <td style="width: 9ch; text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">
-                                                @FormatValue(tag.Value)
-                                            </td>
-                                            <td style="width: 13ch; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">
-                                                @(tag.Timestamp?.ToString("HH:mm:ss.fff") ?? "—")
-                                            </td>
+                                            <td class="sub-val">@FormatValue(tag.Value)</td>
+                                            <td class="sub-ts">@(tag.Timestamp?.ToString("HH:mm:ss.fff") ?? "—")</td>
                                         </tr>
                                     }
                                 </tbody>
                             </MudSimpleTable>
                         }
                 </MudPaper>
+                <MudPaper Outlined="true" Class="scada-card pa-4" Style="flex: 1 1 50%; min-width: 0;">
+                    <div class="scada-eyebrow-row">
+                        <div class="scada-eyebrow">DIAGNOSTICS</div>
+                    </div>
+                    @{
+                        var d = _diag;
+                    }
+                    <div class="scada-pill-strip mb-2">
+                        <span class="scada-pill @PillClassForState(d.ConnectionState)">
+                            <span class="scada-pill-dot"></span>@d.ConnectionState
+                        </span>
+                        <span class="scada-pill @(d.MonitoredItemCount > 0 ? "pill-info" : "")">
+                            @d.MonitoredItemCount item@(d.MonitoredItemCount == 1 ? "" : "s")
+                        </span>
+                        <span class="scada-pill @PillClassForLatency(d.KeepAliveLatencyMs)">
+                            @(d.KeepAliveLatencyMs.HasValue ? $"{d.KeepAliveLatencyMs:F0}ms keep-alive" : "— keep-alive")
+                        </span>
+                        @if (d.PublishingIntervalMs.HasValue)
+                        {
+                            <span class="scada-pill">Publish @(d.PublishingIntervalMs)ms</span>
+                        }
+                        @if (d.MissedKeepAliveCount > 0)
+                        {
+                            <span class="scada-pill pill-error">@d.MissedKeepAliveCount missed</span>
+                        }
+                    </div>
+                    <table class="diag-table" aria-label="Session diagnostics">
+                        <tbody>
+                            <tr><td>State</td><td class="@DiagStateClass(d.ConnectionState)">@d.ConnectionState</td></tr>
+                            <tr><td>Endpoint</td><td title="@d.EndpointUrl">@(d.EndpointUrl ?? "—")</td></tr>
+                            <tr><td>Security</td><td>@(ShortSecurity(d.SecurityPolicyUri))</td></tr>
+                            <tr><td>Uptime</td><td class="diag-accent">@(d.SessionUptime.HasValue ? FormatUptime(d.SessionUptime.Value) : "—")</td></tr>
+                            <tr><td>Monitored items</td><td class="@(d.MonitoredItemCount > 0 ? "diag-ok" : null)">@d.MonitoredItemCount</td></tr>
+                            <tr><td>Publish interval</td><td>@(d.PublishingIntervalMs.HasValue ? $"{d.PublishingIntervalMs} ms" : "—")</td></tr>
+                            <tr><td>Last keep-alive</td><td>@FormatAge(d.LastKeepAliveUtc)</td></tr>
+                            <tr><td>Keep-alive latency</td><td class="@DiagLatencyClass(d.KeepAliveLatencyMs)">@(d.KeepAliveLatencyMs.HasValue ? $"{d.KeepAliveLatencyMs:F0} ms" : "—")</td></tr>
+                            <tr><td>Missed keep-alives</td><td class="@(d.MissedKeepAliveCount > 0 ? "diag-error" : null)">@d.MissedKeepAliveCount</td></tr>
+                            <tr><td>Last notification</td><td>@FormatAge(d.LastNotificationUtc)</td></tr>
+                            @if (!string.IsNullOrEmpty(d.LastError))
+                            {
+                                <tr><td>Last error</td><td class="diag-error">@d.LastError</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </MudPaper>
+                </div>
             <MudPaper Outlined="true" Class="scada-card pa-4">
-                <div class="d-flex align-center justify-space-between mb-3">
+                <div class="scada-eyebrow-row">
                     <div class="scada-eyebrow">LIVE CHART</div>
                     <MudToggleGroup T="TimeSpan" @bind-Value="_chartWindow" Color="Color.Info"
-                        Size="Size.Small">
+                        Size="Size.Small" Class="scada-window-picker">
                         <MudToggleItem Value="@TimeSpan.FromSeconds(30)" Text="30s" />
                         <MudToggleItem Value="@TimeSpan.FromMinutes(1)" Text="1m" />
                         <MudToggleItem Value="@TimeSpan.FromMinutes(5)" Text="5m" />
@@ -137,7 +178,7 @@ else
                 }
                 else
                 {
-                    <div class="d-flex flex-wrap gap-2 mb-2">
+                    <div class="scada-pill-strip mb-2">
                         @{
                             var tagIdx = 0;
                         }
@@ -148,6 +189,7 @@ else
                             var nodeIdCapture = nodeId;
                             <button type="button"
                                     class="scada-tag-pill tag-@thisIdx @(isCharted ? "active" : "")"
+                                    aria-pressed="@(isCharted ? "true" : "false")"
                                     @onclick="@(() => ToggleChartedTag(nodeIdCapture))">
                                 <span class="scada-tag-dot"></span>
                                 @GetDisplayName(nodeId)
@@ -185,75 +227,75 @@ else
                     }
                 }
             </MudPaper>
-
-            <MudPaper Outlined="true" Class="scada-card pa-4">
-                <div class="scada-eyebrow mb-3">DIAGNOSTICS</div>
-                @{
-                    var d = _diag;
-                }
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                    <span class="scada-pill @PillClassForState(d.ConnectionState)">
-                        <span class="scada-pill-dot"></span>@d.ConnectionState
-                    </span>
-                    <span class="scada-pill @(d.MonitoredItemCount > 0 ? "pill-info" : "")">
-                        @d.MonitoredItemCount item@(d.MonitoredItemCount == 1 ? "" : "s")
-                    </span>
-                    <span class="scada-pill @PillClassForLatency(d.KeepAliveLatencyMs)">
-                        @(d.KeepAliveLatencyMs.HasValue ? $"{d.KeepAliveLatencyMs:F0}ms keep-alive" : "— keep-alive")
-                    </span>
-                    @if (d.PublishingIntervalMs.HasValue)
-                    {
-                        <span class="scada-pill">Publish @(d.PublishingIntervalMs)ms</span>
-                    }
-                    @if (d.MissedKeepAliveCount > 0)
-                    {
-                        <span class="scada-pill pill-error">@d.MissedKeepAliveCount missed</span>
-                    }
-                </div>
-                <table class="diag-table">
-                    <tbody>
-                        <tr><td>State</td><td class="@DiagStateClass(d.ConnectionState)">@d.ConnectionState</td></tr>
-                        <tr><td>Endpoint</td><td title="@d.EndpointUrl">@(d.EndpointUrl ?? "—")</td></tr>
-                        <tr><td>Security</td><td>@(ShortSecurity(d.SecurityPolicyUri))</td></tr>
-                        <tr><td>Uptime</td><td class="diag-accent">@(d.SessionUptime.HasValue ? FormatUptime(d.SessionUptime.Value) : "—")</td></tr>
-                        <tr><td>Monitored items</td><td class="@(d.MonitoredItemCount > 0 ? "diag-ok" : null)">@d.MonitoredItemCount</td></tr>
-                        <tr><td>Publish interval</td><td>@(d.PublishingIntervalMs.HasValue ? $"{d.PublishingIntervalMs} ms" : "—")</td></tr>
-                        <tr><td>Last keep-alive</td><td>@FormatAge(d.LastKeepAliveUtc)</td></tr>
-                        <tr><td>Keep-alive latency</td><td class="@DiagLatencyClass(d.KeepAliveLatencyMs)">@(d.KeepAliveLatencyMs.HasValue ? $"{d.KeepAliveLatencyMs:F0} ms" : "—")</td></tr>
-                        <tr><td>Missed keep-alives</td><td class="@(d.MissedKeepAliveCount > 0 ? "diag-error" : null)">@d.MissedKeepAliveCount</td></tr>
-                        <tr><td>Last notification</td><td>@FormatAge(d.LastNotificationUtc)</td></tr>
-                        @if (!string.IsNullOrEmpty(d.LastError))
-                        {
-                            <tr><td>Last error</td><td class="diag-error">@d.LastError</td></tr>
-                        }
-                    </tbody>
-                </table>
-            </MudPaper>
             </MudStack>
         </MudItem>
     </MudGrid>
 }
 
 <style>
-    /* Card refinements — 1px subtle border instead of heavy 2px */
-    .scada-card.mud-paper-outlined {
-        border-width: 1px;
-        border-color: rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
+    /* Theme tokens — swap here, cascade everywhere */
+    :root {
+        --scada-border: rgba(255, 255, 255, 0.08);
+        --scada-subtle-bg: rgba(255, 255, 255, 0.05);
+        --scada-hover-bg: rgba(255, 255, 255, 0.04);
+        --scada-hover-border: rgba(255, 255, 255, 0.2);
+        --scada-eyebrow-border: rgba(255, 255, 255, 0.05);
     }
-    .mud-theme-light .scada-card.mud-paper-outlined {
-        border-color: rgba(15, 23, 42, 0.09);
+    .mud-theme-light {
+        --scada-border: rgba(15, 23, 42, 0.09);
+        --scada-subtle-bg: rgba(15, 23, 42, 0.05);
+        --scada-hover-bg: rgba(15, 23, 42, 0.04);
+        --scada-hover-border: rgba(15, 23, 42, 0.16);
+        --scada-eyebrow-border: rgba(15, 23, 42, 0.06);
     }
 
-    /* Section eyebrow headers — uppercase, letter-spaced, muted */
+    /* Card — 1px subtle border */
+    .scada-card.mud-paper-outlined {
+        border-width: 1px;
+        border-color: var(--scada-border);
+        border-radius: 10px;
+    }
+
+    /* Section eyebrow headers */
     .scada-eyebrow {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 0.7rem;
         font-weight: 600;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         color: var(--mud-palette-text-secondary);
-        opacity: 0.72;
+        opacity: 0.78;
+    }
+    .scada-eyebrow-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 10px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--scada-eyebrow-border);
+    }
+
+    /* Outer grid — force 16px between tree and right column (matches inner gaps) */
+    .scada-outer-grid.mud-grid {
+        margin: -8px;
+    }
+    .scada-outer-grid.mud-grid > .mud-grid-item {
+        padding: 8px;
+    }
+
+    /* Two-column flex row (subscription + diagnostics) */
+    .scada-row-2col {
+        display: flex;
+        gap: 16px;
+        align-items: stretch;
+    }
+    .scada-row-2col > .mud-paper { display: flex; flex-direction: column; }
+
+    /* Named pattern: horizontal strip of pills */
+    .scada-pill-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
     /* Status / diagnostic pills */
@@ -267,40 +309,38 @@ else
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 0.72rem;
         font-weight: 500;
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--scada-subtle-bg);
         color: var(--mud-palette-text-secondary);
         white-space: nowrap;
         font-variant-numeric: tabular-nums;
     }
-    .mud-theme-light .scada-pill { background: rgba(15, 23, 42, 0.05); }
     .scada-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
     .scada-pill.pill-success { background: rgba(34, 211, 164, 0.14); color: var(--mud-palette-success); }
     .scada-pill.pill-info    { background: rgba(56, 189, 248, 0.14); color: var(--mud-palette-info); }
     .scada-pill.pill-warning { background: rgba(251, 191, 36, 0.14); color: var(--mud-palette-warning); }
     .scada-pill.pill-error   { background: rgba(244, 63, 94, 0.14); color: var(--mud-palette-error); }
 
-    /* Chart tag pills — selectable, tinted when active */
+    /* Chart tag pills — borderless tinted ghost when inactive, filled when active */
     .scada-tag-pill {
         display: inline-flex;
         align-items: center;
-        gap: 7px;
-        height: 26px;
-        padding: 0 10px;
-        border-radius: 6px;
-        background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        gap: 6px;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 5px;
+        background: var(--scada-subtle-bg);
+        border: 1px solid transparent;
         color: var(--mud-palette-text-secondary);
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 500;
+        letter-spacing: 0.01em;
         cursor: pointer;
         transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    .mud-theme-light .scada-tag-pill { border-color: rgba(15, 23, 42, 0.12); }
-    .scada-tag-pill:hover { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.2); }
-    .mud-theme-light .scada-tag-pill:hover { background: rgba(15, 23, 42, 0.04); }
+    .scada-tag-pill:hover { background: var(--scada-hover-bg); border-color: var(--scada-hover-border); }
     .scada-tag-pill .scada-tag-dot {
-        width: 7px; height: 7px; border-radius: 50%;
+        width: 6px; height: 6px; border-radius: 50%;
         background: rgba(148, 163, 184, 0.6);
     }
     .scada-tag-pill.tag-0 { --tag-c: #38BDF8; --tag-rgb: 56, 189, 248; }
@@ -315,17 +355,70 @@ else
     }
     .scada-tag-pill.active .scada-tag-dot { background: var(--tag-c); }
 
-    /* Chart + tree + diag-table existing styles */
-    .apexcharts-legend-marker { margin-right: 8px !important; }
-    .tree-compact { font-size: 0.875rem; }
-    .tree-compact .mud-treeview-item-content { font-size: 0.875rem; }
-    .tree-compact .mud-icon-root { font-size: 1.125rem; }
-    .tree-compact .mud-icon-root.mud-svg-icon { width: 1.125rem; height: 1.125rem; }
+    /* Tree — density + monospace overrides */
+    .tree-compact {
+        font-size: 0.78rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .tree-compact .mud-treeview-item-content {
+        min-height: 26px;
+        padding-top: 1px;
+        padding-bottom: 1px;
+    }
+    .tree-compact .mud-treeview-item-content .mud-typography {
+        font-family: inherit;
+    }
+    .tree-compact .mud-icon-root { font-size: 1.2rem; }
+    .tree-compact .mud-icon-root.mud-svg-icon { width: 1.2rem; height: 1.2rem; }
+
+    /* Action button — tinted fill matching active-pill aesthetic */
+    .mud-button.scada-action-btn {
+        background-color: rgba(56, 189, 248, 0.14);
+        color: var(--mud-palette-info);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        text-transform: none;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    .mud-button.scada-action-btn:hover {
+        background-color: rgba(56, 189, 248, 0.22);
+        border-color: rgba(56, 189, 248, 0.5);
+    }
+    .mud-button.scada-action-btn.mud-disabled,
+    .mud-button.scada-action-btn:disabled {
+        background-color: rgba(148, 163, 184, 0.08);
+        color: var(--mud-palette-action-disabled);
+        border-color: rgba(148, 163, 184, 0.15);
+    }
+
+    /* Window picker (MudToggleGroup) — tinted fill on active item */
+    .scada-window-picker.mud-toggle-group .mud-toggle-item-selected {
+        background-color: rgba(56, 189, 248, 0.15) !important;
+        color: var(--mud-palette-info) !important;
+    }
+    .scada-window-picker.mud-toggle-group .mud-toggle-item {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        min-width: 36px;
+    }
+
+    /* Subscription table cells */
+    .sub-tag { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sub-val, .sub-ts {
+        font-variant-numeric: tabular-nums;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .sub-val { text-align: right; }
+
+    /* Diagnostics table */
     .diag-table { width: 100%; font-size: 0.82rem; }
     .diag-table td { padding: 3px 4px; vertical-align: top; }
     .diag-table td:first-child {
         color: var(--mud-palette-text-secondary);
-        width: 45%;
+        width: 40%;
         font-size: 0.72rem;
         letter-spacing: 0.02em;
     }
@@ -358,11 +451,15 @@ else
     private HashSet<string> _nodeFolders = new();
     private HashSet<string> _nodeReadable = new();
 
+    // Custom icons matching the hero aesthetic — simple blue-rect folder + outlined leaf box
+    private const string FolderIconSvg =
+        @"<path d=""M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"" fill=""currentColor"" fill-opacity=""0.32""/>" +
+        @"<path d=""M3 7a2 2 0 0 1 2-2h5l2 2h3v3H3V7Z"" fill=""currentColor"" fill-opacity=""0.6""/>";
+
+    private const string LeafIconSvg =
+        @"<rect x=""5"" y=""7"" width=""14"" height=""10"" rx=""2"" fill=""none"" stroke=""currentColor"" stroke-width=""1.6""/>";
+
     private const int ChartTagCap = 4;
-    private static readonly Color[] TagPalette =
-    {
-        Color.Info, Color.Success, Color.Warning, Color.Tertiary, Color.Secondary
-    };
     private static readonly string[] TagPaletteHex =
     {
         "#38BDF8", "#22D3A4", "#FBBF24", "#F472B6", "#14B8A6"
@@ -378,21 +475,16 @@ else
         {
             Animations = new ApexCharts.Animations { Enabled = false },
             Toolbar = new ApexCharts.Toolbar { Show = false },
-            Height = 420,
+            Height = 320,
             Background = "transparent",
             ForeColor = "var(--mud-palette-text-primary)"
         },
         Grid = new ApexCharts.Grid
         {
             BorderColor = "var(--mud-palette-lines-default)",
-            Padding = new ApexCharts.Padding { Bottom = 12 }
+            Padding = new ApexCharts.Padding { Bottom = 0, Top = 0 }
         },
-        Legend = new ApexCharts.Legend
-        {
-            Position = ApexCharts.LegendPosition.Bottom,
-            OffsetY = 8,
-            ItemMargin = new ApexCharts.LegendItemMargin { Vertical = 6 }
-        },
+        Legend = new ApexCharts.Legend { Show = false },
         Stroke = new ApexCharts.Stroke { Curve = ApexCharts.Curve.Smooth, Width = 2 },
         Tooltip = new ApexCharts.Tooltip { Enabled = true, X = new ApexCharts.TooltipX { Format = "HH:mm:ss" } },
         Xaxis = new ApexCharts.XAxis
@@ -416,12 +508,6 @@ else
             }
         }
     };
-
-    private Color GetTagColor(string nodeId)
-    {
-        var idx = _subscribedTags.Keys.ToList().IndexOf(nodeId);
-        return idx >= 0 ? TagPalette[idx % TagPalette.Length] : Color.Default;
-    }
 
     private void RefreshChartColors()
     {
@@ -448,8 +534,8 @@ else
 
     private Color GetIconColor(string? nodeId)
     {
-        if (string.IsNullOrEmpty(nodeId)) return Color.Default;
-        if (_nodeFolders.Contains(nodeId)) return Color.Default;
+        if (string.IsNullOrEmpty(nodeId)) return Color.Info;
+        if (_nodeFolders.Contains(nodeId)) return Color.Info;
         return _nodeReadable.Contains(nodeId) ? Color.Success : Color.Error;
     }
 
@@ -633,9 +719,7 @@ else
             {
                 Value = n.NodeId,
                 Text = n.DisplayName,
-                Icon = n.HasChildren
-                    ? Icons.Material.Filled.Folder
-                    : Icons.Material.Filled.LocalOffer,
+                Icon = n.HasChildren ? FolderIconSvg : LeafIconSvg,
                 Expandable = n.HasChildren
             }).ToList();
         }
