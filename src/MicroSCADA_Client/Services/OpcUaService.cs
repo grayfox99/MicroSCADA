@@ -12,7 +12,21 @@ public class OpcUaService : IOpcUaService
     private readonly SemaphoreSlim _lock = new(1, 1);
 
     public bool IsConnected => _session?.Connected ?? false;
+    public string? CurrentEndpointUrl { get; private set; }
+    public string? SecurityPolicyUri { get; private set; }
+    public DateTime? ConnectedSinceUtc { get; private set; }
+    public int? PublishingIntervalMs { get; private set; }
+    public int MonitoredItemCount => _subscriptions.Sum(s => (int)s.MonitoredItemCount);
+    public DateTime? LastKeepAliveUtc { get; private set; }
+    public double? KeepAliveLatencyMs { get; private set; }
+    public int MissedKeepAliveCount { get; private set; }
+    public DateTime? LastNotificationUtc { get; private set; }
+    public string? LastError { get; private set; }
+
     public event Action<string, string>? DataChanged;
+    public event Action? Connected;
+    public event Action? Disconnected;
+    public event Action<string>? SessionFaulted;
 
     public async Task ConnectAsync(string endpointUrl)
     {
@@ -74,11 +88,25 @@ public class OpcUaService : IOpcUaService
                 new UserIdentity(new AnonymousIdentityToken()),
                 null
             );
+
+            _session.KeepAlive += OnSessionKeepAlive;
+            CurrentEndpointUrl = selectedEndpoint.EndpointUrl;
+            SecurityPolicyUri = selectedEndpoint.SecurityPolicyUri;
+            ConnectedSinceUtc = DateTime.UtcNow;
+            MissedKeepAliveCount = 0;
+            LastError = null;
+        }
+        catch (Exception ex)
+        {
+            LastError = ex.Message;
+            throw;
         }
         finally
         {
             _lock.Release();
         }
+
+        Connected?.Invoke();
     }
 
     public async Task DisconnectAsync()
@@ -104,10 +132,40 @@ public class OpcUaService : IOpcUaService
 
         if (_session != null)
         {
+            _session.KeepAlive -= OnSessionKeepAlive;
             await _session.CloseAsync();
             _session.Dispose();
             _session = null;
         }
+
+        var wasConnected = CurrentEndpointUrl != null;
+        CurrentEndpointUrl = null;
+        SecurityPolicyUri = null;
+        ConnectedSinceUtc = null;
+        PublishingIntervalMs = null;
+        LastKeepAliveUtc = null;
+        KeepAliveLatencyMs = null;
+        LastNotificationUtc = null;
+
+        if (wasConnected)
+            Disconnected?.Invoke();
+    }
+
+    private void OnSessionKeepAlive(Opc.Ua.Client.ISession session, KeepAliveEventArgs e)
+    {
+        var now = DateTime.UtcNow;
+        LastKeepAliveUtc = now;
+
+        if (ServiceResult.IsBad(e.Status))
+        {
+            MissedKeepAliveCount++;
+            var error = e.Status?.ToString() ?? "KeepAlive failed";
+            LastError = error;
+            SessionFaulted?.Invoke(error);
+            return;
+        }
+
+        KeepAliveLatencyMs = Math.Max(0, (now - e.CurrentTime.ToUniversalTime()).TotalMilliseconds);
     }
 
     public async Task<List<OpcNode>> BrowseAsync(string? nodeId = null)
@@ -192,6 +250,7 @@ public class OpcUaService : IOpcUaService
             _session.AddSubscription(subscription);
             await subscription.CreateAsync();
             _subscriptions.Add(subscription);
+            PublishingIntervalMs = (int)subscription.PublishingInterval;
         }
         finally
         {
@@ -203,6 +262,7 @@ public class OpcUaService : IOpcUaService
     {
         if (e.NotificationValue is MonitoredItemNotification notification)
         {
+            LastNotificationUtc = DateTime.UtcNow;
             DataChanged?.Invoke(
                 item.StartNodeId.ToString(),
                 notification.Value?.WrappedValue.ToString() ?? "null"

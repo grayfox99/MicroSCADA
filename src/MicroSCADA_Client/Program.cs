@@ -10,12 +10,15 @@ builder.Services.AddMudServices();
 builder.Services.AddApexCharts();
 builder.Services.AddSingleton<IOpcUaService, OpcUaService>();
 builder.Services.AddSingleton<ITagHistoryService, TagHistoryService>();
+builder.Services.AddSingleton<IDiagnosticsService, DiagnosticsService>();
 
 var app = builder.Build();
 
-// Eagerly construct TagHistoryService so it subscribes to IOpcUaService.DataChanged
-// before any user hits Connect — otherwise the first few samples post-connect are lost.
+// Eagerly construct so the services attach to IOpcUaService events before any
+// user hits Connect — otherwise early samples/events land before the subscriber
+// exists and are lost.
 _ = app.Services.GetRequiredService<ITagHistoryService>();
+_ = app.Services.GetRequiredService<IDiagnosticsService>();
 
 if (!app.Environment.IsDevelopment())
 {
