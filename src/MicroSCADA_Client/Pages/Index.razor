@@ -7,8 +7,6 @@
 
 <PageTitle>MicroSCADA</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">MicroSCADA</MudText>
-
 @if (!OpcService.IsConnected)
 {
     <MudPaper Class="pa-4" Style="max-width: 500px;">
@@ -34,15 +32,16 @@
 }
 else
 {
-    <MudButton OnClick="DisconnectAsync" Variant="Variant.Outlined" Color="Color.Error" Class="mb-4"
-        StartIcon="@Icons.Material.Filled.PowerSettingsNew">
-        Disconnect
-    </MudButton>
-
     <MudGrid>
         <MudItem xs="4">
             <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
-                <MudText Typo="Typo.h6" Class="mb-2">Node Browser</MudText>
+                <div class="d-flex align-center justify-space-between mb-2">
+                    <MudText Typo="Typo.h6">Node Browser</MudText>
+                    <MudButton OnClick="DisconnectAsync" Variant="Variant.Outlined" Color="Color.Error"
+                        Size="Size.Small" StartIcon="@Icons.Material.Filled.PowerSettingsNew">
+                        Disconnect
+                    </MudButton>
+                </div>
                 <div style="max-height: 75vh; overflow-y: auto;">
                     <MudTreeView T="string" Items="_treeItems" ServerData="LoadChildNodes"
                         SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedNodeIds">
@@ -58,18 +57,37 @@ else
         </MudItem>
         <MudItem xs="8">
             <MudStack Spacing="4">
-                <div>
-                    <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
-                        <MudText Typo="Typo.h6" Class="mb-2">Subscription Data</MudText>
-                        @if (_subscribedTags.Count == 0)
-                        {
-                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                                @(_subscriptionError ?? "No subscriptions active")
+                <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
+                    <div class="d-flex align-center justify-space-between mb-2">
+                        <MudText Typo="Typo.h6">Subscription Data</MudText>
+                        <div class="d-flex align-center gap-3">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                Selected: @(_selectedNodeIds?.Count ?? 0)
                             </MudText>
-                        }
-                        else
-                        {
-                            <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="table-layout: fixed; width: 100%;">
+                            <MudButton OnClick="SubscribeAsync" Variant="Variant.Filled" Color="Color.Primary"
+                                Size="Size.Small"
+                                Disabled="@(_subscribing || (_selectedNodeIds?.Count ?? 0) == 0)">
+                                @if (_subscribing)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ms-n1" />
+                                    <MudText Class="ms-2">Subscribing...</MudText>
+                                }
+                                else
+                                {
+                                    <MudText>Subscribe</MudText>
+                                }
+                            </MudButton>
+                        </div>
+                    </div>
+                    @if (_subscribedTags.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                            @(_subscriptionError ?? "No subscriptions active")
+                        </MudText>
+                    }
+                    else
+                    {
+                        <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="table-layout: fixed; width: 100%;">
                                 <thead>
                                     <tr>
                                         <th>Tag</th>
@@ -97,23 +115,7 @@ else
                                 </tbody>
                             </MudSimpleTable>
                         }
-                    </MudPaper>
-                    <MudButton OnClick="SubscribeAsync" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2"
-                        Disabled="@(_subscribing || (_selectedNodeIds?.Count ?? 0) == 0)">
-                        @if (_subscribing)
-                        {
-                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ms-n1" />
-                            <MudText Class="ms-2">Subscribing...</MudText>
-                        }
-                        else
-                        {
-                            <MudText>Subscribe</MudText>
-                        }
-                    </MudButton>
-                    <MudText Typo="Typo.subtitle1" Class="mt-2">
-                        Selected: @(_selectedNodeIds?.Count ?? 0) nodes
-                    </MudText>
-                </div>
+                </MudPaper>
             <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <MudText Typo="Typo.h6">Live Chart</MudText>
@@ -139,8 +141,8 @@ else
                         {
                             var isCharted = _chartedTags.Contains(nodeId);
                             <MudChip T="string" Size="Size.Small"
-                                Color="@(isCharted ? Color.Primary : Color.Default)"
-                                Variant="@(isCharted ? Variant.Filled : Variant.Outlined)"
+                                Color="@(isCharted ? GetTagColor(nodeId) : Color.Default)"
+                                Variant="Variant.Outlined"
                                 OnClick="@(() => ToggleChartedTag(nodeId))">
                                 @GetDisplayName(nodeId)
                             </MudChip>
@@ -169,7 +171,7 @@ else
                                     Items="@History.GetWindow(nodeId, _chartWindow)"
                                     Name="@GetDisplayName(nodeId)"
                                     SeriesType="ApexCharts.SeriesType.Line"
-                                    XValue="@(s => FormatSampleTime(s))"
+                                    XValue="@(s => ((DateTimeOffset)s.Ts).ToUnixTimeMilliseconds())"
                                     YValue="@(s => (decimal)s.Value)" />
                             }
                         </ApexCharts.ApexChart>
@@ -227,6 +229,14 @@ else
     private Dictionary<string, string> _nodeDisplayNames = new();
 
     private const int ChartTagCap = 4;
+    private static readonly Color[] TagPalette =
+    {
+        Color.Info, Color.Success, Color.Warning, Color.Tertiary, Color.Secondary
+    };
+    private static readonly string[] TagPaletteHex =
+    {
+        "#38BDF8", "#22D3A4", "#FBBF24", "#F472B6", "#14B8A6"
+    };
     private TimeSpan _chartWindow = TimeSpan.FromMinutes(1);
     private List<string> _chartedTags = new();
     private bool _capWarning;
@@ -242,8 +252,46 @@ else
         },
         Theme = new ApexCharts.Theme { Mode = ApexCharts.Mode.Dark },
         Stroke = new ApexCharts.Stroke { Curve = ApexCharts.Curve.Smooth, Width = 2 },
-        Tooltip = new ApexCharts.Tooltip { Enabled = true }
+        Tooltip = new ApexCharts.Tooltip { Enabled = true, X = new ApexCharts.TooltipX { Format = "HH:mm:ss" } },
+        Xaxis = new ApexCharts.XAxis
+        {
+            Type = ApexCharts.XAxisType.Datetime,
+            Labels = new ApexCharts.XAxisLabels
+            {
+                Rotate = 0,
+                DatetimeUTC = false,
+                HideOverlappingLabels = true
+            }
+        },
+        Yaxis = new List<ApexCharts.YAxis>
+        {
+            new ApexCharts.YAxis
+            {
+                Labels = new ApexCharts.YAxisLabels
+                {
+                    Formatter = "function(val) { return Number(val).toPrecision(5); }"
+                }
+            }
+        }
     };
+
+    private Color GetTagColor(string nodeId)
+    {
+        var idx = _subscribedTags.Keys.ToList().IndexOf(nodeId);
+        return idx >= 0 ? TagPalette[idx % TagPalette.Length] : Color.Default;
+    }
+
+    private void RefreshChartColors()
+    {
+        var subscribedOrdered = _subscribedTags.Keys.ToList();
+        _chartOptions.Colors = _chartedTags
+            .Select(id =>
+            {
+                var idx = subscribedOrdered.IndexOf(id);
+                return idx >= 0 ? TagPaletteHex[idx % TagPaletteHex.Length] : TagPaletteHex[0];
+            })
+            .ToList();
+    }
 
     private class SubscribedTag
     {
@@ -306,9 +354,6 @@ else
     private string GetDisplayName(string nodeId)
         => _nodeDisplayNames.TryGetValue(nodeId, out var name) ? name : nodeId;
 
-    private static string FormatSampleTime(TagSample s)
-        => s.Ts.ToLocalTime().ToString("HH:mm:ss");
-
     private bool _chartDirty;
 
     private void OnHistoryUpdated()
@@ -337,11 +382,14 @@ else
         else if (_chartedTags.Count >= ChartTagCap)
         {
             _capWarning = true;
+            return;
         }
         else
         {
             _chartedTags.Add(nodeId);
         }
+        RefreshChartColors();
+        _chartDirty = true;
     }
 
     private async Task ConnectAsync()
@@ -436,6 +484,7 @@ else
             foreach (var id in _selectedNodeIds)
                 History.Track(id);
             _chartedTags = _selectedNodeIds.Take(ChartTagCap).ToList();
+            RefreshChartColors();
             await OpcService.SubscribeAsync(_selectedNodeIds);
         }
         catch (Exception ex)
