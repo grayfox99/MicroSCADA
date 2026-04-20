@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@inject IDiagnosticsService Diagnostics
+@implements IDisposable
 
 <MudThemeProvider Theme="_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -8,6 +10,11 @@
 <MudLayout>
     <MudAppBar Elevation="0" Color="Color.Surface">
         <MudText Typo="Typo.h6">MicroSCADA</MudText>
+        <MudChip T="string" Size="Size.Small" Class="ml-3"
+            Color="@StatusColor" Variant="Variant.Filled"
+            Icon="@Icons.Material.Filled.Circle">
+            @_diag.ConnectionState
+        </MudChip>
         <MudSpacer />
         <MudTooltip Text="@(_isDarkMode ? "Switch to light mode" : "Switch to dark mode")">
             <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
@@ -24,6 +31,28 @@
 
 @code {
     bool _isDarkMode = true;
+    DiagnosticsSnapshot _diag = default!;
+
+    protected override void OnInitialized()
+    {
+        _diag = Diagnostics.Current;
+        Diagnostics.Updated += OnDiagnosticsUpdated;
+    }
+
+    private void OnDiagnosticsUpdated(DiagnosticsSnapshot snapshot)
+    {
+        _diag = snapshot;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private Color StatusColor => _diag.ConnectionState switch
+    {
+        ConnectionState.Connected => Color.Success,
+        ConnectionState.Faulted => Color.Warning,
+        _ => Color.Default
+    };
+
+    public void Dispose() => Diagnostics.Updated -= OnDiagnosticsUpdated;
 
     private readonly MudTheme _theme = new()
     {

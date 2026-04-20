@@ -1,6 +1,7 @@
 @page "/"
 @inject IOpcUaService OpcService
 @inject ITagHistoryService History
+@inject IDiagnosticsService Diagnostics
 @inject IConfiguration Configuration
 @implements IDisposable
 
@@ -112,7 +113,7 @@ else
     </MudGrid>
 
     <MudGrid Class="mt-2">
-        <MudItem xs="12">
+        <MudItem xs="8">
             <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <MudText Typo="Typo.h6">Live Chart</MudText>
@@ -176,8 +177,42 @@ else
                 }
             </MudPaper>
         </MudItem>
+        <MudItem xs="4">
+            <MudPaper Outlined="true" Class="pa-4" Style="border-width: 2px;">
+                <MudText Typo="Typo.h6" Class="mb-2">Diagnostics</MudText>
+                @{
+                    var d = _diag;
+                }
+                <table class="diag-table">
+                    <tbody>
+                        <tr><td>State</td><td>@d.ConnectionState</td></tr>
+                        <tr><td>Endpoint</td><td title="@d.EndpointUrl">@(d.EndpointUrl ?? "—")</td></tr>
+                        <tr><td>Security</td><td>@(ShortSecurity(d.SecurityPolicyUri))</td></tr>
+                        <tr><td>Uptime</td><td>@(d.SessionUptime.HasValue ? FormatUptime(d.SessionUptime.Value) : "—")</td></tr>
+                        <tr><td>Monitored items</td><td>@d.MonitoredItemCount</td></tr>
+                        <tr><td>Publish interval</td><td>@(d.PublishingIntervalMs.HasValue ? $"{d.PublishingIntervalMs} ms" : "—")</td></tr>
+                        <tr><td>Last keep-alive</td><td>@FormatAge(d.LastKeepAliveUtc)</td></tr>
+                        <tr><td>Keep-alive latency</td><td>@(d.KeepAliveLatencyMs.HasValue ? $"{d.KeepAliveLatencyMs:F0} ms" : "—")</td></tr>
+                        <tr><td>Missed keep-alives</td><td>@d.MissedKeepAliveCount</td></tr>
+                        <tr><td>Last notification</td><td>@FormatAge(d.LastNotificationUtc)</td></tr>
+                        @if (!string.IsNullOrEmpty(d.LastError))
+                        {
+                            <tr><td>Last error</td><td class="diag-error">@d.LastError</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </MudPaper>
+        </MudItem>
     </MudGrid>
 }
+
+<style>
+    .diag-table { width: 100%; font-size: 0.85rem; }
+    .diag-table td { padding: 2px 4px; vertical-align: top; }
+    .diag-table td:first-child { color: var(--mud-palette-text-secondary); width: 45%; }
+    .diag-table td:last-child { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; max-width: 0; white-space: nowrap; }
+    .diag-error { color: var(--mud-palette-error); }
+</style>
 
 @code {
     private string _endpointUrl = "";
@@ -196,6 +231,7 @@ else
     private List<string> _chartedTags = new();
     private bool _capWarning;
     private ApexCharts.ApexChart<TagSample>? _chart;
+    private DiagnosticsSnapshot _diag = default!;
     private readonly ApexCharts.ApexChartOptions<TagSample> _chartOptions = new()
     {
         Chart = new ApexCharts.Chart
@@ -231,8 +267,40 @@ else
     protected override void OnInitialized()
     {
         _endpointUrl = Configuration["OpcUa:DefaultEndpoint"] ?? "opc.tcp://localhost:4840";
+        _diag = Diagnostics.Current;
         OpcService.DataChanged += OnDataChanged;
         History.HistoryUpdated += OnHistoryUpdated;
+        Diagnostics.Updated += OnDiagnosticsUpdated;
+    }
+
+    private void OnDiagnosticsUpdated(DiagnosticsSnapshot snapshot)
+    {
+        _diag = snapshot;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private static string ShortSecurity(string? uri)
+    {
+        if (string.IsNullOrEmpty(uri)) return "—";
+        var idx = uri.LastIndexOf('#');
+        return idx >= 0 ? uri[(idx + 1)..] : uri;
+    }
+
+    private static string FormatUptime(TimeSpan t)
+    {
+        if (t.TotalHours >= 1) return $"{(int)t.TotalHours}h {t.Minutes}m";
+        if (t.TotalMinutes >= 1) return $"{t.Minutes}m {t.Seconds}s";
+        return $"{t.Seconds}s";
+    }
+
+    private static string FormatAge(DateTime? utc)
+    {
+        if (!utc.HasValue) return "—";
+        var age = DateTime.UtcNow - utc.Value;
+        if (age.TotalSeconds < 1) return "just now";
+        if (age.TotalSeconds < 60) return $"{(int)age.TotalSeconds}s ago";
+        if (age.TotalMinutes < 60) return $"{(int)age.TotalMinutes}m ago";
+        return utc.Value.ToLocalTime().ToString("HH:mm:ss");
     }
 
     private string GetDisplayName(string nodeId)
@@ -385,5 +453,6 @@ else
     {
         OpcService.DataChanged -= OnDataChanged;
         History.HistoryUpdated -= OnHistoryUpdated;
+        Diagnostics.Updated -= OnDiagnosticsUpdated;
     }
 }
